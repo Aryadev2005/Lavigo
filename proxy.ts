@@ -1,11 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { SUPABASE_ANON, SUPABASE_URL } from './lib/env'
 
 // Runs only on /admin/*: keeps the Supabase session fresh and bounces signed-out visitors to the login page.
 // This is an optimistic check. Every admin page and action ALSO calls requireAdmin().
 export async function proxy(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const url = SUPABASE_URL
+  const anon = SUPABASE_ANON
   if (!url || !anon) return NextResponse.next()
 
   let response = NextResponse.next({ request })

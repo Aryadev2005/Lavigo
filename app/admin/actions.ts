@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { authClient, getAdmin, requireAdmin } from '@/lib/admin-auth'
 import { slugify } from '@/lib/format'
+import { SUPABASE_URL } from '@/lib/env'
 import { adminClient } from '@/lib/supabase'
 
 type R = { error?: string }
@@ -29,7 +30,7 @@ export async function signOut() {
 const int = (v: FormDataEntryValue | null, d = 0) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? n : d }
 const lines = (v: FormDataEntryValue | null) => String(v || '').split('\n').map((s) => s.trim()).filter(Boolean)
 function json<T>(v: FormDataEntryValue | null, fallback: T): T { try { return JSON.parse(String(v || '')) as T } catch { return fallback } }
-const SB = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SB = SUPABASE_URL
 /** Only accept images we host: bundled /img/* files or our own Supabase Storage bucket. */
 function cleanImage(v: unknown): string | null {
   const s = String(v || '').trim()

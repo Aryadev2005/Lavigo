@@ -3,8 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+import { SUPABASE_ANON as anon, SUPABASE_URL as url } from './env'
 
 export const authConfigured = Boolean(url && anon)
 

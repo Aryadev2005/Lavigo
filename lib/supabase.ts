@@ -1,8 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY
+import { SUPABASE_ANON as anon, SUPABASE_SERVICE as service, SUPABASE_URL as url } from './env'
 
 /** True when the site is connected to Supabase. When false the site runs in read-only demo mode on seed data. */
 export const dbConfigured = Boolean(url && anon)

@@ -14,7 +14,7 @@ import { waLink } from '@/lib/whatsapp'
 export const revalidate = 60
 
 export async function generateStaticParams() {
-  return (await getTrips()).map((t) => ({ slug: t.slug }))
+  try { return (await getTrips()).map((t) => ({ slug: t.slug })) } catch (e) { console.error('generateStaticParams: skipping prebuild of trips', e); return [] } // pages then render on first visit
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
