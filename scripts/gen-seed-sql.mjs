@@ -13,7 +13,7 @@ for (const t of seed.trips) {
 }
 sql += '\n'
 for (const d of seed.departures) {
-  sql += `insert into departures(trip_id,depart_date,price,seats_total) select id,${q(d.depart_date)},${d.price},${d.seats_total} from trips where slug=${q(d.trip)};\n`
+  sql += `insert into departures(trip_id,depart_date,price,seats_total) select id,${q(d.depart_date)},${d.price},${d.seats_total} from trips where slug=${q(d.trip)} on conflict do nothing;\n`
 }
 fs.writeFileSync('supabase/migrations/002_seed.sql', sql)
 console.log('wrote supabase/migrations/002_seed.sql', sql.length, 'bytes')

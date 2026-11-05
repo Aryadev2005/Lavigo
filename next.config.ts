@@ -6,7 +6,12 @@ try { supabaseHost = new URL((process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
 
 const config: NextConfig = {
   images: {
-    formats: ['image/avif', 'image/webp'],
+    formats: ['image/webp'],
+    // sensible size ladder (the default goes up to 3840px, and every size is generated on first request)
+    deviceSizes: [480, 768, 1080, 1440],
+    imageSizes: [96, 200, 360, 640],
+    qualities: [70],
+    minimumCacheTTL: 31536000, // photos rarely change; cache optimised copies for a year
     // Photos uploaded from the admin panel live in Supabase Storage
     remotePatterns: supabaseHost ? [{ protocol: 'https', hostname: supabaseHost, pathname: '/storage/v1/object/public/**' }] : [],
   },
