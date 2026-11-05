@@ -1,0 +1,39 @@
+'use client'
+import { useState } from 'react'
+import { ImageField } from './ImageField'
+
+type Field = { key: string; label: string; type?: 'text' | 'textarea' | 'number' | 'image'; placeholder?: string }
+type Row = Record<string, string>
+
+/** Editable list of rows. The rows are serialised into one hidden JSON field named `name`. */
+export function RowsEditor({ name, initial, fields, addLabel }: { name: string; initial: Row[]; fields: Field[]; addLabel: string }) {
+  const [rows, setRows] = useState<Row[]>(initial)
+  const upd = (i: number, k: string, v: string) => setRows((r) => r.map((x, j) => (j === i ? { ...x, [k]: v } : x)))
+  const blank = () => Object.fromEntries(fields.map((f) => [f.key, '']))
+  const move = (i: number, d: number) => setRows((r) => { const j = i + d; if (j < 0 || j >= r.length) return r; const c = [...r]; [c[i], c[j]] = [c[j], c[i]]; return c })
+  return (
+    <div>
+      <input type="hidden" name={name} value={JSON.stringify(rows)} />
+      {rows.map((r, i) => (
+        <div key={i} className="card" style={{ padding: 12, marginBottom: 10 }}>
+          <div className="grid2" style={{ gridTemplateColumns: fields.length > 2 ? '1fr 1fr 1fr' : '1fr 2fr' }}>
+            {fields.map((f) => (
+              <div key={f.key} style={f.type === 'textarea' || f.type === 'image' ? { gridColumn: '1 / -1' } : undefined}>
+                <label className="l">{f.label}</label>
+                {f.type === 'textarea' ? <textarea className="inp sm" style={{ minHeight: 64 }} value={r[f.key] ?? ''} placeholder={f.placeholder} onChange={(e) => upd(i, f.key, e.target.value)} />
+                  : f.type === 'image' ? <ImageField value={r[f.key] ?? ''} onChange={(v) => upd(i, f.key, v)} />
+                  : <input className="inp sm" type={f.type === 'number' ? 'number' : 'text'} min={f.type === 'number' ? 0 : undefined} value={r[f.key] ?? ''} placeholder={f.placeholder} onChange={(e) => upd(i, f.key, e.target.value)} />}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <button type="button" className="btn b-ghost sm" onClick={() => move(i, -1)} aria-label="Move up">↑</button>
+            <button type="button" className="btn b-ghost sm" onClick={() => move(i, 1)} aria-label="Move down">↓</button>
+            <button type="button" className="btn b-danger sm" onClick={() => setRows((x) => x.filter((_, j) => j !== i))}>Remove</button>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="btn b-ghost sm" onClick={() => setRows((r) => [...r, blank()])}>+ {addLabel}</button>
+    </div>
+  )
+}
