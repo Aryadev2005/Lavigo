@@ -1,40 +1,58 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Art } from './Art'
-import { daysTo, fmtDate, inr } from '@/lib/format'
+import { Icon } from './Icons'
+import { fmtDate, inr } from '@/lib/format'
 import type { TripWithDepartures } from '@/lib/types'
 
 const FALLBACK: [string, string, string] = ['#3A0CA3', '#4CC9F0', '#F1FAEE']
 
+// Short labels for the chips on trip cards, picked from the trip's inclusions.
+export function tripChips(inclusions: string[]) {
+  const find = (re: RegExp) => inclusions.find((x) => re.test(x))
+  return {
+    stay: find(/hotel|stay/i) ? 'Hotel' : null,
+    travel: find(/train|cab|travel|bus|flight/i) ?? null,
+    meals: find(/meal|breakfast|dinner|lunch/i) ?? null,
+  }
+}
+
+export function seatLabel(left: number, total: number) {
+  if (left === 0) return 'Sold out'
+  if (left < total) return `${left} seat${left > 1 ? 's' : ''} left`
+  return `${total}-seat group`
+}
+
 export function TripCard({ trip }: { trip: TripWithDepartures }) {
   const dep = trip.departures[0]
-  const name = trip.destination?.name ?? trip.title
-  const soldOut = dep && dep.seats_left === 0
-  const pct = dep && dep.seats_total ? Math.round((1 - dep.seats_left / dep.seats_total) * 100) : 0
+  const chips = tripChips(trip.inclusions)
   return (
-    <Link className="card trip" href={`/trips/${trip.slug}`}>
-      <div className="pic">
+    <Link className="m-card m-trip" href={`/trips/${trip.slug}`}>
+      <div className="m-trip-pic">
         {trip.image
-          ? <><Image src={trip.image} alt={`${trip.title}`} fill sizes="(max-width:580px) 100vw, (max-width:900px) 50vw, 360px" style={{ objectFit: 'cover' }} /><span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(20,14,45,.55))' }} /></>
-          : <Art theme={trip.destination?.theme ?? FALLBACK} id={trip.slug} />}
-        {dep && <span className="chip">{fmtDate(dep.depart_date, { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
-        <span className="nm">{name}</span>
+          ? <Image src={trip.image} alt={trip.title} fill sizes="(max-width:600px) 100vw, (max-width:980px) 50vw, 290px" style={{ objectFit: 'cover' }} />
+          : <Art theme={trip.destination?.theme ?? FALLBACK} id={trip.slug} h={190} />}
+        {dep && <span className="m-tag m-tag-w">{fmtDate(dep.depart_date, { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+        <span className="m-tag m-tag-i">{trip.nights}N / {trip.nights + 1}D</span>
       </div>
-      <div className="body">
-        <b>{trip.title}</b>
-        <span className="muted" style={{ fontSize: 13.5 }}>{trip.route}</span>
-        {dep ? (
-          <>
-            <div className="between" style={{ marginTop: 'auto' }}>
-              <div className="price">{inr(dep.price)} <small>/ person</small></div>
-              <span className={'chip ' + (soldOut ? 'sold' : dep.seats_left < 10 ? 'warn' : 'lav')}>{soldOut ? 'Sold out' : `${dep.seats_left} seats left`}</span>
-            </div>
-            <div className="seatbar"><i style={{ width: `${pct}%` }} /></div>
-            <small className="muted">{trip.nights}N / {trip.nights + 1}D · {daysTo(dep.depart_date)} days to go</small>
-          </>
-        ) : (
-          <div className="between" style={{ marginTop: 'auto' }}><small className="muted">{trip.nights}N / {trip.nights + 1}D</small><span className="chip lav">Next dates soon</span></div>
-        )}
+      <div className="m-trip-body">
+        <b className="m-trip-t">{trip.title}</b>
+        <span className="m-muted m-sm">{trip.route}</span>
+        <div className="m-chips">
+          {chips.stay && <span><Icon name="hotel" size={15} />{chips.stay}</span>}
+          {chips.travel && <span><Icon name="bus" size={15} />{chips.travel}</span>}
+          {chips.meals && <span><Icon name="meal" size={15} />{chips.meals}</span>}
+        </div>
+        <div className="m-trip-foot">
+          {dep ? (
+            <>
+              <div><div className="m-price">{inr(dep.price)}</div><div className="m-muted m-xs">per person · incl. GST</div></div>
+              <span className={'m-seat' + (dep.seats_left === 0 ? ' sold' : '')}>{seatLabel(dep.seats_left, dep.seats_total)}</span>
+            </>
+          ) : (
+            <span className="m-seat">Next dates soon</span>
+          )}
+        </div>
       </div>
     </Link>
   )

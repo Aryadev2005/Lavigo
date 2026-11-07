@@ -4,11 +4,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Art } from '@/components/Art'
 import { BookingForm } from '@/components/BookingForm'
-import { GalleryStrip } from '@/components/Gallery'
+import { GalleryGrid } from '@/components/Gallery'
+import { Icon, WhatsAppGlyph } from '@/components/Icons'
 import { JsonLd } from '@/components/JsonLd'
-import { BUSINESS, SITE_URL } from '@/lib/config'
+import { seatLabel, tripChips } from '@/components/TripCard'
+import { ADVANCE, BUSINESS, CHILD_FACTOR, GST, HOLD_HOURS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTripBySlug, getTrips } from '@/lib/data'
-import { addDays, daysTo, fmtDate, inr } from '@/lib/format'
+import { addDays, fmtDate, inr } from '@/lib/format'
+import type { GalleryImage } from '@/lib/types'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
@@ -38,6 +41,13 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
   const dep = trip.departures[0]
   const url = `${SITE_URL}/trips/${trip.slug}`
   const wa = waLink(`Hi Lavigo, I have a question about the ${trip.title}.`)
+  const chips = tripChips(trip.inclusions)
+
+  const photos: GalleryImage[] = [
+    ...(trip.image ? [{ src: trip.image, caption: trip.title }] : []),
+    ...(dest?.gallery ?? []).filter((g) => g.src !== trip.image),
+  ]
+  const dayPhoto = (i: number) => dest?.gallery[i] ?? null
 
   const jsonLd = [
     {
@@ -72,70 +82,111 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
   ]
 
   return (
-    <div className={dep ? 'has-bar' : undefined}>
+    <div className={'m-page' + (dep ? ' has-bar' : '')}>
       {jsonLd.map((d, i) => <JsonLd key={i} data={d} />)}
-      <div className="thero">
-        {trip.image
-          ? <Image src={trip.image} alt={trip.title} fill priority sizes="100vw" style={{ objectFit: 'cover' }} />
-          : <Art theme={trip.destination?.theme ?? ['#3A0CA3', '#4CC9F0', '#F1FAEE']} h={300} id={trip.slug} />}
-        <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(20,14,45,.35),rgba(20,14,45,.88))' }} />
-        <div className="wrap">
-          {dep && <span className="chip" style={{ alignSelf: 'flex-start' }}>{daysTo(dep.depart_date)} days to go · {fmtDate(dep.depart_date, { day: 'numeric', month: 'long', year: 'numeric' })}</span>}
-          <h1 style={{ fontSize: 'clamp(34px,6vw,56px)', marginTop: 10 }}>{trip.title}</h1>
-          <p style={{ color: '#E5DFF8', marginTop: 6 }}>{trip.route}</p>
+
+      <div className="m-wrap" style={{ paddingTop: 18 }}>
+        <nav className="m-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> › <Link href="/trips">Group trips</Link> › {trip.destination?.name ?? trip.title}</nav>
+        <div className="m-td-head">
+          <div>
+            <div className="m-chips" style={{ marginBottom: 8 }}>
+              <span className="m-chip-ink">{trip.nights}N / {trip.nights + 1}D</span>
+              <span className="m-chip-lav">Group trip · from Ranchi</span>
+              {dep && <span className={'m-seat' + (dep.seats_left === 0 ? ' sold' : '')}>{seatLabel(dep.seats_left, dep.seats_total)}</span>}
+            </div>
+            <h1 className="m-td-h">{trip.title}</h1>
+            <p className="m-muted2" style={{ marginTop: 6 }}>{trip.route}</p>
+          </div>
+          <a href={wa} target="_blank" rel="noopener" className="m-btn-line"><WhatsAppGlyph size={16} />Ask about this trip</a>
         </div>
+        {photos.length > 0
+          ? <GalleryGrid images={photos} label={trip.title} />
+          : <div className="m-gal-art"><Art theme={trip.destination?.theme ?? ['#3A0CA3', '#4CC9F0', '#F1FAEE']} h={300} id={trip.slug} /></div>}
       </div>
 
-      <div className="wrap"><div className="tgrid">
-        <div>
-          <div className="card" style={{ padding: 16, display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
-            <span className="chip lav">{trip.nights}N / {trip.nights + 1}D</span>
-            <span className="chip lav">Leaves from Ranchi</span>
-            <span className="chip lav">Trip leader</span>
-            {dep && <span className={'chip ' + (dep.seats_left === 0 ? 'sold' : dep.seats_left < 10 ? 'warn' : 'ok')}>{dep.seats_left === 0 ? 'Sold out' : `${dep.seats_left} of ${dep.seats_total} seats left`}</span>}
+      <nav className="m-stabs" aria-label="Trip sections">
+        <div className="m-wrap">
+          <a href="#itinerary">Itinerary</a>
+          <a href="#inclusions">Inclusions</a>
+          <a href="#book">Dates &amp; price</a>
+          <a href="#policies">Policies</a>
+          {trip.faqs.length > 0 && <a href="#faqs">FAQs</a>}
+        </div>
+      </nav>
+
+      <div className="m-wrap m-td">
+        <div className="m-td-main">
+          <div className="m-card m-pad">
+            <p style={{ lineHeight: 1.6 }}>{trip.summary}</p>
+            <div className="m-facts">
+              <div><Icon name="calendar" size={22} /><small>Duration</small><b>{trip.nights} nights, {trip.nights + 1} days</b></div>
+              {chips.meals && <div><Icon name="meal" size={22} /><small>Meals</small><b>{chips.meals}</b></div>}
+              {chips.travel && <div><Icon name="bus" size={22} /><small>Travel</small><b>{chips.travel}</b></div>}
+              {dep && <div><Icon name="group" size={22} /><small>Group size</small><b>{dep.seats_total} seats</b></div>}
+            </div>
           </div>
 
-          <p style={{ marginBottom: 18, color: '#3E3760' }}>{trip.summary}</p>
-          {dest && dest.gallery.length > 0 && <GalleryStrip images={dest.gallery} label={dest.name} />}
+          <div className="m-card m-pad" id="itinerary">
+            <h2 className="m-h3">Day-by-day itinerary</h2>
+            {trip.itinerary.map((x, i) => {
+              const p = dayPhoto(i)
+              return (
+                <div className={'m-day' + (p ? ' has-pic' : '')} key={i}>
+                  <span className="m-day-n">{i + 1}</span>
+                  <div>
+                    <small className="m-muted">Day {i + 1}{dep ? ` · ${fmtDate(addDays(dep.depart_date, i), { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}</small>
+                    <b>{x.title}</b>
+                    <p>{x.text}</p>
+                  </div>
+                  {p && <div className="m-day-pic"><Image src={p.src} alt={p.caption} fill sizes="(max-width:900px) 100vw, 200px" style={{ objectFit: 'cover' }} /></div>}
+                </div>
+              )
+            })}
+          </div>
 
-          <h2 style={{ marginBottom: 12 }}>Day by day</h2>
-          {trip.itinerary.map((x, i) => (
-            <details className="day" key={i} open={i === 0}>
-              <summary>
-                <div className="dn">DAY<span>{i + 1}</span></div>
-                <div><b>{x.title}</b>{dep && <div className="muted" style={{ fontSize: 13 }}>{fmtDate(addDays(dep.depart_date, i), { weekday: 'short', day: 'numeric', month: 'short' })}</div>}</div>
-              </summary>
-              <div className="bd">{x.text}</div>
-            </details>
-          ))}
+          <div className="m-card m-pad m-inc" id="inclusions">
+            <div>
+              <h2 className="m-h3">Included</h2>
+              <ul>{trip.inclusions.map((x) => <li key={x} className="yes">{x}</li>)}</ul>
+            </div>
+            <div>
+              <h2 className="m-h3">Not included</h2>
+              <ul>{trip.exclusions.map((x) => <li key={x} className="no">{x}</li>)}</ul>
+            </div>
+          </div>
 
-          <div className="two" style={{ marginTop: 18 }}>
-            <div className="card" style={{ padding: 16 }}><h3 style={{ marginBottom: 6 }}>Included</h3><ul className="ticks">{trip.inclusions.map((x) => <li key={x}>{x}</li>)}</ul></div>
-            <div className="card" style={{ padding: 16 }}><h3 style={{ marginBottom: 6 }}>Not included</h3><ul style={{ paddingLeft: 18, color: '#3E3760' }}>{trip.exclusions.map((x) => <li key={x} style={{ padding: '3px 0' }}>{x}</li>)}</ul></div>
+          <div className="m-card m-pad" id="policies">
+            <h2 className="m-h3">Booking &amp; payment</h2>
+            <ul className="m-bul">
+              <li>Seats are held for {HOLD_HOURS} hours after you submit the booking form.</li>
+              <li>Pay a {ADVANCE * 100}% advance on WhatsApp to confirm. The balance is due before you travel.</li>
+              <li>Prices include {GST * 100}% GST. Children pay {CHILD_FACTOR * 100}% of the adult price.</li>
+              <li>Cancellations follow our <Link href="/refund-policy">refund policy</Link>.</li>
+            </ul>
           </div>
 
           {trip.faqs.length > 0 && (
-            <>
-              <h2 style={{ margin: '26px 0 12px' }}>Questions about this trip</h2>
-              {trip.faqs.map((f) => <details className="faq" key={f.q}><summary>{f.q}</summary><div className="a">{f.a}</div></details>)}
-            </>
+            <div className="m-card m-pad" id="faqs">
+              <h2 className="m-h3">FAQs</h2>
+              {trip.faqs.map((f) => <details className="m-faq m-faq-flat" key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>)}
+            </div>
           )}
-          <p className="muted" style={{ marginTop: 18, fontSize: 14 }}>Prefer your own dates? <Link href="/plan" style={{ textDecoration: 'underline' }}>Plan a custom trip</Link> or call {BUSINESS.phoneDisplay}.</p>
+          <p className="m-sm m-muted">Prefer your own dates? <Link href="/plan">Plan a custom trip</Link> or call {BUSINESS.phoneDisplay}.</p>
         </div>
 
-        <aside id="book"><div className="card sumcard">
-          <div className="sumhead"><small>{dep ? 'From, per person' : 'Group trip'}</small><div className="price">{dep ? inr(dep.price) : 'Dates soon'}</div><small>incl. GST · leaves from Ranchi</small></div>
+        <aside id="book" className="m-td-side"><div className="m-card sumcard m-book">
+          <div className="sumhead"><small>{dep ? 'Starting from' : 'Group trip'}</small><div className="price">{dep ? inr(dep.price) : 'Dates soon'} {dep && <small>per person</small>}</div><small>Includes {GST * 100}% GST · leaves from Ranchi</small></div>
           <BookingForm
             whatsappHref={wa}
             departures={trip.departures.map((d) => ({ id: d.id, date: d.depart_date, price: d.price, seatsLeft: d.seats_left }))}
           />
         </div></aside>
-      </div></div>
+      </div>
 
       {dep && (
         <div className="mbar">
           <div><b>{inr(dep.price)}</b><small>per person · {dep.seats_left === 0 ? 'sold out' : `${dep.seats_left} seats left`}</small></div>
-          <a className="btn b-main" href="#book">Reserve seats</a>
+          <a className="m-btn-sun" href="#book">Hold seats</a>
         </div>
       )}
     </div>
