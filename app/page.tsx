@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Art } from '@/components/Art'
+import { PhotoWall } from '@/components/Gallery'
 import { Icon, type IconName } from '@/components/Icons'
 import { HomeSearch } from '@/components/HomeSearch'
 import { JsonLd } from '@/components/JsonLd'
@@ -9,7 +10,7 @@ import { TripCard } from '@/components/TripCard'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
 import { addDays, inr, isoDate, todayISO } from '@/lib/format'
-import { ABOUT_IMAGE, HERO_IMAGE, HERO_VIDEO, PLAN_IMAGE, REELS } from '@/lib/media'
+import { ABOUT_IMAGE, HERO_IMAGE, HERO_VIDEO, PLAN_IMAGE, REELS, TRIP_PHOTOS } from '@/lib/media'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
@@ -114,12 +115,24 @@ export default async function Home() {
       <section className="m-sec" id="moments">
         <div className="m-wrap">
           <div className="m-sec-h">
-            <div><h2>Trip moments</h2><p>Short videos from our recent group trips.</p></div>
+            <div><h2>Trip moments</h2><p>Short videos from our recent Nepal group trip.</p></div>
             <a href={BUSINESS.instagram} target="_blank" rel="noopener" className="m-more">More on Instagram @lavigo.in <Icon name="arrow" size={18} /></a>
           </div>
           <Moments reels={REELS} instagram={BUSINESS.instagram} />
         </div>
       </section>
+
+      {TRIP_PHOTOS.length > 0 && (
+        <section className="m-sec" id="gallery">
+          <div className="m-wrap">
+            <div className="m-sec-h">
+              <div><h2>From our last trip</h2><p>Real travellers from Ranchi, photographed on the road in Nepal.</p></div>
+              <Link href="/trips" className="m-more">See upcoming trips <Icon name="arrow" size={18} /></Link>
+            </div>
+            <PhotoWall photos={TRIP_PHOTOS} label="Lavigo Nepal trip" />
+          </div>
+        </section>
+      )}
 
       <section className="m-sec" id="plan">
         <div className="m-wrap">
@@ -152,7 +165,7 @@ export default async function Home() {
       <section className="m-sec" id="about" style={{ paddingBottom: 64 }}>
         <div className="m-wrap m-about">
           <div className="m-card m-about-c">
-            <div className="m-about-pic"><Image src={ABOUT_IMAGE} alt="Monastery below the Himalaya, Nepal" fill sizes="(max-width:900px) 100vw, 400px" style={{ objectFit: 'cover' }} /></div>
+            <div className="m-about-pic"><Image src={ABOUT_IMAGE} alt="Lavigo travellers with the Lavigo banner at Phewa Lake, Pokhara" fill sizes="(max-width:900px) 100vw, 400px" style={{ objectFit: 'cover' }} /></div>
             <div style={{ padding: 24 }}>
               <h2 className="m-h3">A travel team from Ranchi</h2>
               <p className="m-muted" style={{ marginTop: 8 }}>{BUSINESS.name} runs every group trip from our office in Chutia, Samlong. A Lavigo trip leader travels with each group from the first day to the last.</p>

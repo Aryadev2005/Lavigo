@@ -65,6 +65,24 @@ export function GalleryGrid({ images, label }: { images: GalleryImage[]; label: 
   )
 }
 
+// Home page photo wall from a real trip; wide photos span two columns.
+export function PhotoWall({ photos, label }: { photos: (GalleryImage & { wide?: boolean })[]; label: string }) {
+  const { setOpen, box } = useLightbox()
+  return (
+    <>
+      <div className="m-wall">
+        {photos.map((g, j) => (
+          <button key={g.src} type="button" className={g.wide ? 'wide' : undefined} onClick={() => setOpen({ list: photos, i: j, label })} aria-label={`View photo: ${g.caption}`}>
+            <Image src={g.src} alt={g.caption} fill sizes={g.wide ? '(max-width:600px) 100vw, 50vw' : '(max-width:600px) 50vw, 25vw'} style={{ objectFit: 'cover' }} />
+            <span>{g.caption}</span>
+          </button>
+        ))}
+      </div>
+      {box}
+    </>
+  )
+}
+
 export type MosaicItem = { label: string; list: GalleryImage[]; index: number }
 export function Mosaic({ items }: { items: MosaicItem[] }) {
   const { setOpen, box } = useLightbox()
