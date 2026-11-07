@@ -18,7 +18,7 @@ const FALLBACK: [string, string, string] = ['#3A0CA3', '#4CC9F0', '#F1FAEE']
 
 export default async function Trips() {
   const trips = await getTrips()
-  const rows: Row[] = trips.flatMap((t) => {
+  const rows: Row[] = trips.flatMap((t): Row[] => {
     const c = tripChips(t.inclusions)
     const base = {
       slug: t.slug,
