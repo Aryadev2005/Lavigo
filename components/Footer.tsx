@@ -5,27 +5,36 @@ import { waLink } from '@/lib/whatsapp'
 
 export function Footer() {
   return (
-    <footer>
-      <div className="wrap fg">
-        <div>
-          <Image src="/img/logo.webp" alt="Lavigo" width={288} height={105} style={{ height: 28, width: 'auto', marginBottom: 10 }} />
-          <p>{BUSINESS.tagline}<br />{BUSINESS.address}</p>
+    <footer className="m-foot">
+      <div className="m-wrap">
+        <div className="m-foot-g">
+          <div>
+            <Image src="/img/logo.webp" alt="Lavigo" width={288} height={105} style={{ height: 30, width: 'auto', marginBottom: 12 }} />
+            <p>{BUSINESS.tagline}</p>
+            <p style={{ marginTop: 10 }}>{BUSINESS.address}</p>
+          </div>
+          <div>
+            <h4>Trips</h4>
+            <Link href="/trips">Group trips</Link>
+            <Link href="/plan">Custom trip planner</Link>
+            <Link href="/#destinations">Destinations</Link>
+            <Link href="/#moments">Trip vlogs</Link>
+          </div>
+          <div>
+            <h4>Help</h4>
+            <Link href="/my-bookings">My bookings</Link>
+            <Link href="/refund-policy">Cancellation &amp; refunds</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+          </div>
+          <div>
+            <h4>Contact</h4>
+            <a href={`tel:${BUSINESS.phoneE164}`}>{BUSINESS.phoneDisplay}</a>
+            <a href={waLink()} target="_blank" rel="noopener">WhatsApp</a>
+            <a href={BUSINESS.instagram} target="_blank" rel="noopener">Instagram @lavigo.in</a>
+          </div>
         </div>
-        <div>
-          <h4>Travel</h4>
-          <Link href="/trips">Group trips</Link>
-          <Link href="/plan">Plan a custom trip</Link>
-          <Link href="/my-bookings">My bookings</Link>
-        </div>
-        <div>
-          <h4>Talk to us</h4>
-          <a href={`tel:${BUSINESS.phoneE164}`}>{BUSINESS.phoneDisplay}</a>
-          <a href={waLink()} target="_blank" rel="noopener">WhatsApp</a>
-          <a href={BUSINESS.instagram} target="_blank" rel="noopener">Instagram @lavigo.in</a>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/refund-policy">Cancellation &amp; refunds</Link>
-        </div>
+        <div className="m-foot-b">© {new Date().getFullYear()} {BUSINESS.name}, {BUSINESS.city}</div>
       </div>
     </footer>
   )

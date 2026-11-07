@@ -45,6 +45,26 @@ export function GalleryStrip({ images, label }: { images: GalleryImage[]; label:
   )
 }
 
+// Trip page photo grid: one large photo and four small ones; the last opens the full set.
+export function GalleryGrid({ images, label }: { images: GalleryImage[]; label: string }) {
+  const { setOpen, box } = useLightbox()
+  const shown = images.slice(0, 5)
+  const more = images.length - shown.length
+  return (
+    <>
+      <div className={'m-gal m-gal-' + shown.length}>
+        {shown.map((g, j) => (
+          <button key={g.src + j} type="button" onClick={() => setOpen({ list: images, i: j, label })} aria-label={`View photo: ${g.caption}`}>
+            <Image src={g.src} alt={g.caption} fill priority={j === 0} sizes={j === 0 ? '(max-width:900px) 100vw, 600px' : '(max-width:900px) 50vw, 300px'} style={{ objectFit: 'cover' }} />
+            {j === shown.length - 1 && more > 0 && <span className="m-gal-more">+{more} photos</span>}
+          </button>
+        ))}
+      </div>
+      {box}
+    </>
+  )
+}
+
 export type MosaicItem = { label: string; list: GalleryImage[]; index: number }
 export function Mosaic({ items }: { items: MosaicItem[] }) {
   const { setOpen, box } = useLightbox()

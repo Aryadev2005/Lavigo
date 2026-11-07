@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Archivo } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Footer } from '@/components/Footer'
 import { FooterGate } from '@/components/FooterGate'
@@ -6,8 +7,10 @@ import { Header } from '@/components/Header'
 import { JsonLd } from '@/components/JsonLd'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import './globals.css'
+import './mmt.css'
 
 const outfit = localFont({ src: './fonts/outfit-latin.woff2', variable: '--font-outfit', display: 'swap', weight: '100 900' })
+const archivo = Archivo({ subsets: ['latin'], weight: ['700', '800', '900'], variable: '--font-archivo', display: 'swap' })
 const italiana = localFont({ src: './fonts/italiana.woff2', variable: '--font-italiana', display: 'swap', weight: '400' })
 
 const indexable = process.env.ALLOW_INDEXING === 'true' // flip to true on launch day
@@ -42,7 +45,7 @@ const agency = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${outfit.variable} ${italiana.variable}`}>
+    <html lang="en-IN" className={`${outfit.variable} ${italiana.variable} ${archivo.variable}`}>
       <body>
         <a className="skip" href="#main">Skip to content</a>
         <JsonLd data={agency} />
