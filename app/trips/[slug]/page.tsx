@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { Art } from '@/components/Art'
 import { BookingForm } from '@/components/BookingForm'
 import { GalleryGrid } from '@/components/Gallery'
+import { Icon, WhatsAppGlyph } from '@/components/Icons'
 import { JsonLd } from '@/components/JsonLd'
 import { seatLabel, tripChips } from '@/components/TripCard'
 import { ADVANCE, BUSINESS, CHILD_FACTOR, GST, HOLD_HOURS, SITE_URL } from '@/lib/config'
@@ -96,7 +97,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             <h1 className="m-td-h">{trip.title}</h1>
             <p className="m-muted2" style={{ marginTop: 6 }}>{trip.route}</p>
           </div>
-          <a href={wa} target="_blank" rel="noopener" className="m-btn-line">Ask about this trip</a>
+          <a href={wa} target="_blank" rel="noopener" className="m-btn-line"><WhatsAppGlyph size={16} />Ask about this trip</a>
         </div>
         {photos.length > 0
           ? <GalleryGrid images={photos} label={trip.title} />
@@ -118,10 +119,10 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
           <div className="m-card m-pad">
             <p style={{ lineHeight: 1.6 }}>{trip.summary}</p>
             <div className="m-facts">
-              <div><small>Duration</small><b>{trip.nights} nights, {trip.nights + 1} days</b></div>
-              {chips.meals && <div><small>Meals</small><b>{chips.meals}</b></div>}
-              {chips.travel && <div><small>Travel</small><b>{chips.travel}</b></div>}
-              {dep && <div><small>Group size</small><b>{dep.seats_total} seats</b></div>}
+              <div><Icon name="calendar" size={22} /><small>Duration</small><b>{trip.nights} nights, {trip.nights + 1} days</b></div>
+              {chips.meals && <div><Icon name="meal" size={22} /><small>Meals</small><b>{chips.meals}</b></div>}
+              {chips.travel && <div><Icon name="bus" size={22} /><small>Travel</small><b>{chips.travel}</b></div>}
+              {dep && <div><Icon name="group" size={22} /><small>Group size</small><b>{dep.seats_total} seats</b></div>}
             </div>
           </div>
 

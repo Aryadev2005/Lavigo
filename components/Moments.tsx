@@ -2,6 +2,7 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import type { Reel } from '@/lib/media'
+import { Icon } from './Icons'
 
 // Row of vertical video cards. Cards without a video open Instagram instead.
 export function Moments({ reels, instagram }: { reels: Reel[]; instagram: string }) {
@@ -21,7 +22,7 @@ export function Moments({ reels, instagram }: { reels: Reel[]; instagram: string
             <>
               <Image src={r.poster} alt="" fill sizes="(max-width:600px) 50vw, (max-width:980px) 33vw, 230px" style={{ objectFit: 'cover' }} />
               <span className="m-reel-shade" />
-              <span className="m-reel-play" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z" /></svg></span>
+              <span className="m-reel-play" aria-hidden="true"><Icon name="play" size={20} /></span>
               <span className="m-reel-l">{r.label}</span>
             </>
           )

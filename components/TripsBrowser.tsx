@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { Art } from './Art'
+import { Icon } from './Icons'
 import { fmtDate, inr } from '@/lib/format'
 
 export type Row = {
@@ -101,7 +102,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
         <div className="m-filters-note">
           <b>Don&apos;t see your dates?</b>
           <span>Plan a private trip and get a quote on WhatsApp.</span>
-          <Link href="/plan">Open trip planner →</Link>
+          <Link href="/plan">Open trip planner <Icon name="arrow" size={16} /></Link>
         </div>
       </aside>
 
@@ -130,8 +131,8 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
                   <Link href={`/trips/${r.slug}`} className="m-row-t">{r.title}</Link>
                   <div className="m-sm m-muted2">{r.route}</div>
                   <div className="m-chips m-chips-ic">
-                    {r.date && <span>{fmtDate(r.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
-                    {r.chips.map((c) => <span key={c}>{c}</span>)}
+                    {r.date && <span><Icon name="calendar" size={16} />{fmtDate(r.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
+                    {r.chips.map((c) => <span key={c}><Icon name={/hotel|stay/i.test(c) ? 'hotel' : /meal|breakfast|dinner|lunch/i.test(c) ? 'meal' : 'bus'} size={16} />{c}</span>)}
                   </div>
                   {r.highlights.length > 0 && <ul>{r.highlights.map((h) => <li key={h}>{h}</li>)}</ul>}
                 </div>

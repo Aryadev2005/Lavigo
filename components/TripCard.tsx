@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Art } from './Art'
+import { Icon } from './Icons'
 import { fmtDate, inr } from '@/lib/format'
 import type { TripWithDepartures } from '@/lib/types'
 
@@ -38,9 +39,9 @@ export function TripCard({ trip }: { trip: TripWithDepartures }) {
         <b className="m-trip-t">{trip.title}</b>
         <span className="m-muted m-sm">{trip.route}</span>
         <div className="m-chips">
-          {chips.stay && <span>{chips.stay}</span>}
-          {chips.travel && <span>{chips.travel}</span>}
-          {chips.meals && <span>{chips.meals}</span>}
+          {chips.stay && <span><Icon name="hotel" size={15} />{chips.stay}</span>}
+          {chips.travel && <span><Icon name="bus" size={15} />{chips.travel}</span>}
+          {chips.meals && <span><Icon name="meal" size={15} />{chips.meals}</span>}
         </div>
         <div className="m-trip-foot">
           {dep ? (

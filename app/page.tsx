@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Art } from '@/components/Art'
+import { Icon, type IconName } from '@/components/Icons'
 import { HomeSearch } from '@/components/HomeSearch'
 import { JsonLd } from '@/components/JsonLd'
 import { Moments } from '@/components/Moments'
@@ -21,12 +22,11 @@ const FAQ = [
   { q: 'Can I plan a trip on my own dates?', a: 'Yes. Use the trip planner to choose places, nights, stay type, travel mode and activities. You see a day-by-day plan and a price estimate, then get the final quote on WhatsApp.' },
 ]
 
-const ic = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', strokeWidth: 2, 'aria-hidden': true } as const
-const TRUST = [
-  { t: 'Seats held 24 hours', s: 'Reserve now, pay later', c: 'lav', i: <svg {...ic} stroke="#3D2E8C"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg> },
-  { t: 'Only 25% advance', s: 'Balance before you travel', c: 'sun', i: <svg {...ic} stroke="#8A5A00"><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></svg> },
-  { t: 'GST included', s: 'The price you see is final', c: 'lav', i: <svg {...ic} stroke="#3D2E8C"><path d="M5 12l4 4 10-10" /></svg> },
-  { t: 'Trip leader on board', s: 'Every group departure', c: 'sun', i: <svg {...ic} stroke="#8A5A00"><circle cx="9" cy="8" r="3" /><path d="M3 20c.8-3.5 3.2-5.5 6-5.5s5.2 2 6 5.5" /></svg> },
+const TRUST: { t: string; s: string; c: 'lav' | 'sun'; i: IconName }[] = [
+  { t: 'Seats held 24 hours', s: 'Reserve now, pay later', c: 'lav', i: 'clock' },
+  { t: 'Only 25% advance', s: 'Balance before you travel', c: 'sun', i: 'wallet' },
+  { t: 'GST included', s: 'The price you see is final', c: 'lav', i: 'receipt' },
+  { t: 'Trip leader on board', s: 'Every group departure', c: 'sun', i: 'leader' },
 ]
 
 export default async function Home() {
@@ -61,7 +61,7 @@ export default async function Home() {
               <h1 className="m-hero-h">Trips from Ranchi,<br />planned day by day.</h1>
             </div>
             <Link href="/#moments" className="m-reel-btn">
-              <span aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z" /></svg></span>
+              <span aria-hidden="true"><Icon name="play" size={16} /></span>
               Watch trip moments
             </Link>
           </div>
@@ -73,7 +73,7 @@ export default async function Home() {
         <div className="m-wrap">
           <div className="m-trust">
             {TRUST.map((x) => (
-              <div key={x.t}><span className={'m-ic ' + x.c}>{x.i}</span><div><b>{x.t}</b><span>{x.s}</span></div></div>
+              <div key={x.t}><span className={'m-ic ' + x.c}><Icon name={x.i} size={26} /></span><div><b>{x.t}</b><span>{x.s}</span></div></div>
             ))}
           </div>
         </div>
@@ -84,7 +84,7 @@ export default async function Home() {
           <div className="m-wrap">
             <div className="m-sec-h">
               <div><h2>Upcoming group departures</h2><p>Fixed dates, small groups, everything from Ranchi.</p></div>
-              <Link href="/trips" className="m-more">View all trips →</Link>
+              <Link href="/trips" className="m-more">View all trips <Icon name="arrow" size={18} /></Link>
             </div>
             <div className="m-g4">{withDeps.slice(0, 4).map((t) => <TripCard key={t.id} trip={t} />)}</div>
           </div>
@@ -115,7 +115,7 @@ export default async function Home() {
         <div className="m-wrap">
           <div className="m-sec-h">
             <div><h2>Trip moments</h2><p>Short videos from our recent group trips.</p></div>
-            <a href={BUSINESS.instagram} target="_blank" rel="noopener" className="m-more">More on Instagram @lavigo.in →</a>
+            <a href={BUSINESS.instagram} target="_blank" rel="noopener" className="m-more">More on Instagram @lavigo.in <Icon name="arrow" size={18} /></a>
           </div>
           <Moments reels={REELS} instagram={BUSINESS.instagram} />
         </div>
