@@ -8,9 +8,18 @@ import { BUSINESS, SITE_URL } from '@/lib/config'
 import './globals.css'
 import './mmt.css'
 import './lavigo.css'
+import './premium.css'
 
 const outfit = localFont({ src: './fonts/outfit-latin.woff2', variable: '--font-outfit', display: 'swap', weight: '100 900' })
-const archivo = localFont({ src: './fonts/archivo-latin.woff2', variable: '--font-archivo', display: 'swap', weight: '100 900' })
+// Display serif. The weight range is capped at 600 so headings stay elegant even where older CSS asks for 800-900.
+const fraunces = localFont({
+  src: [
+    { path: './fonts/fraunces-latin.woff2', weight: '300 600', style: 'normal' },
+    { path: './fonts/fraunces-latin-italic.woff2', weight: '300 600', style: 'italic' },
+  ],
+  variable: '--font-display',
+  display: 'swap',
+})
 const italiana = localFont({ src: './fonts/italiana.woff2', variable: '--font-italiana', display: 'swap', weight: '400' })
 
 const indexable = process.env.ALLOW_INDEXING === 'true' // flip to true on launch day
@@ -45,7 +54,7 @@ const agency = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${outfit.variable} ${italiana.variable} ${archivo.variable}`}>
+    <html lang="en-IN" className={`${outfit.variable} ${italiana.variable} ${fraunces.variable}`}>
       <body>
         <a className="skip" href="#main">Skip to content</a>
         <JsonLd data={agency} />

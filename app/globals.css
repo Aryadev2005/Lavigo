@@ -410,8 +410,6 @@ body .home-page h2{font-family:var(--font-italiana),Italiana,serif;font-weight:4
 .rowedit{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:8px}
 @media(max-width:760px){.rowedit{grid-template-columns:1fr}}
 .tbl-scroll{overflow-x:auto}
-
-/* admin: traveller list with gender */
 .paxlist{list-style:none;margin:4px 0 0;padding:0;font-size:13px}
 .paxlist li{display:flex;align-items:center;gap:6px;padding:1px 0}
 .gx{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;font-size:11px;font-weight:800}

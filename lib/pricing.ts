@@ -37,10 +37,12 @@ export type Builder = {
   travel: Travel
   ground: Ground
   acts: string[]
+  others: Other[] // any place not in our list, typed by the traveller; priced on WhatsApp
 }
+export type Other = { name: string; nights: number }
 
 export const DEFAULT_BUILDER: Omit<Builder, 'dests' | 'order' | 'start' | 'acts'> = {
-  from: '', adults: 2, kids: 0, tier: 'comfort', tickets: 'agency', travel: 'train', ground: 'shared',
+  from: '', adults: 2, kids: 0, tier: 'comfort', tickets: 'agency', travel: 'train', ground: 'shared', others: [],
 }
 
 export type Quote = ReturnType<typeof quote>
@@ -58,6 +60,7 @@ export function quote(b: Builder, all: Destination[]) {
   const tier = TIERS[b.tier]
   const from = b.from.trim()
   const rate = (d: Destination) => d[`rate_${b.tier}` as const]
+  const others = (b.others ?? []).map((o) => ({ name: o.name.trim().slice(0, 60), nights: Math.max(1, Math.min(30, Math.round(o.nights))) })).filter((o) => o.name.length >= 2)
 
   let nights = 0, stays = 0, meals = 0, acts = 0
   const chosen: { id: string; n: string; p: number; where: string; dest: string }[] = []
@@ -72,7 +75,9 @@ export function quote(b: Builder, all: Destination[]) {
     for (const h of D.hotels ?? []) if (h.tier === b.tier) hotels.push({ ...h, dest: D.name })
   }
 
-  const totalDays = nights + 1
+  const featuredNights = nights
+  for (const o of others) nights += o.nights
+  const totalDays = featuredNights + 1
   const first = order.length ? bySlug.get(order[0])! : null
   const tickets = b.tickets === 'agency' && first ? (b.travel === 'flight' ? first.travel_flight : first.travel_train) * paxEq : 0
   const hops = Math.max(0, order.length - 1) * HOP * paxEq
@@ -92,7 +97,7 @@ export function quote(b: Builder, all: Destination[]) {
   const included: string[] = []
   const excluded: string[] = []
   if (order.length) {
-    included.push(`${tier.name} hotel stays, ${nights} night${nights > 1 ? 's' : ''} (${rooms} room${rooms > 1 ? 's' : ''})`)
+    included.push(`${tier.name} hotel stays, ${featuredNights} night${featuredNights > 1 ? 's' : ''} (${rooms} room${rooms > 1 ? 's' : ''})`)
     included.push('Breakfast and dinner every day')
     if (b.tickets === 'agency') included.push(`Return ${how} tickets${from ? ` from ${from}` : ' from your city'}`)
     else excluded.push(`Train or flight tickets${from ? ` from ${from}` : ''} (you book them)`)
@@ -102,6 +107,16 @@ export function quote(b: Builder, all: Destination[]) {
     included.push('Trip planning and help on WhatsApp throughout')
     included.push(`All taxes (${GST * 100}% GST)`)
     excluded.push('Lunch, snacks and drinks', 'Entry tickets and activities not listed above', 'Personal shopping, tips and laundry')
+  }
+  if (others.length) {
+    if (!order.length) {
+      included.push(`${tier.name} hotel stays, ${nights} night${nights > 1 ? 's' : ''}`, 'Breakfast and dinner every day')
+      if (b.tickets === 'agency') included.push(`Return ${how} tickets${from ? ` from ${from}` : ' from your city'}`)
+      else excluded.push(`Train or flight tickets${from ? ` from ${from}` : ''} (you book them)`)
+      included.push(b.ground === 'private' ? 'Private car with driver' : 'Station or airport pick-up and drop', 'Trip planning and help on WhatsApp throughout')
+      excluded.push('Lunch, snacks and drinks', 'Entry tickets and activities', 'Personal shopping, tips and laundry')
+    }
+    included.push(`Stays and transport in ${others.map((o) => o.name).join(', ')} (priced by Lavigo on WhatsApp)`)
   }
 
   // day-by-day plan
@@ -133,24 +148,38 @@ export function quote(b: Builder, all: Destination[]) {
       days.push({ n: ++di, date: addDays(b.start, di - 1), title, text })
     }
   })
-  if (order.length) {
-    const last = bySlug.get(order[order.length - 1])!
-    const lp = last.places.length ? last.places : [last.name]
+  let lastName = ''
+  if (order.length) { const L = bySlug.get(order[order.length - 1])!; lastName = (L.places.length ? L.places : [L.name]).slice(-1)[0] }
+  others.forEach((o, i) => {
+    const prev = i > 0 ? others[i - 1].name : lastName
+    for (let j = 0; j < o.nights; j++) {
+      const title = j === 0 ? `${prev || home} → ${o.name}` : `${o.name} sightseeing`
+      const text = j > 0 ? 'Local sightseeing at your pace. Lavigo shares the detailed plan on WhatsApp.'
+        : prev ? `Transfer to ${o.name}, check in and rest.`
+        : b.tickets === 'agency' ? `Travel from ${from || 'your city'} by ${how}. We meet you and take you to your ${tier.name.toLowerCase()} stay.`
+        : `Reach ${o.name} on your own. We meet you and take you to your ${tier.name.toLowerCase()} stay.`
+      days.push({ n: ++di, date: addDays(b.start, di - 1), title, text })
+    }
+  })
+  if (others.length) lastName = others[others.length - 1].name
+  if (order.length || others.length) {
+    const lp = [lastName]
     days.push({ n: ++di, date: addDays(b.start, di - 1), title: `${lp[lp.length - 1]} → ${home}`, text: b.tickets === 'agency' ? 'Check out after breakfast and travel home.' : 'Check out after breakfast. We drop you at the station or airport.' })
   }
 
-  return { order, pax, nights, rooms, days, total, perPerson: pax ? total / pax : 0, advance: total * ADVANCE, chosen, included, excluded, hotels, cars, carCount }
+  const stops = [...order.map((k) => bySlug.get(k)!.name), ...others.map((o) => o.name)]
+  return { order, others, stops, ok: stops.length > 0, priced: order.length > 0, pax, nights, rooms, days, total, perPerson: pax ? total / pax : 0, advance: total * ADVANCE, chosen, included, excluded, hotels, cars, carCount }
 }
 
 /* ---------- share a plan in a link (used by the downloadable itinerary) ---------- */
 export function encodePlan(b: Builder) {
-  const compact = [b.order.map((k) => `${k}:${b.dests[k]}`).join(','), b.start, b.from, b.adults, b.kids, b.tier, b.tickets, b.travel, b.ground, b.acts.join(',')]
+  const compact = [b.order.map((k) => `${k}:${b.dests[k]}`).join(','), b.start, b.from, b.adults, b.kids, b.tier, b.tickets, b.travel, b.ground, b.acts.join(','), (b.others ?? []).map((o) => `${o.name.replace(/[|:]/g, ' ')}:${o.nights}`).join('|')]
   return compact.map((x) => encodeURIComponent(String(x))).join('~')
 }
 
 export function decodePlan(s: string): Builder | null {
   try {
-    const [d, start, from, adults, kids, tier, tickets, travel, ground, acts] = s.split('~').map((x) => decodeURIComponent(x))
+    const [d, start, from, adults, kids, tier, tickets, travel, ground, acts, oth] = s.split('~').map((x) => decodeURIComponent(x))
     const order: string[] = []
     const dests: Record<string, number> = {}
     for (const part of (d || '').split(',').filter(Boolean)) {
@@ -158,7 +187,10 @@ export function decodePlan(s: string): Builder | null {
       const nn = Math.round(Number(n))
       if (/^[a-z0-9-]{1,60}$/.test(k) && nn >= 1 && nn <= 30) { order.push(k); dests[k] = nn }
     }
-    if (!order.length || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return null
+    const others: Other[] = (oth || '').split('|').filter(Boolean).slice(0, 10).map((x) => {
+      const i = x.lastIndexOf(':'); return { name: x.slice(0, i).trim().slice(0, 60), nights: Math.min(30, Math.max(1, Math.round(Number(x.slice(i + 1))) || 1)) }
+    }).filter((o) => o.name.length >= 2)
+    if ((!order.length && !others.length) || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return null
     const int = (v: string, lo: number, hi: number, dflt: number) => { const x = Math.round(Number(v)); return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : dflt }
     return {
       dests, order, start,
@@ -170,6 +202,7 @@ export function decodePlan(s: string): Builder | null {
       travel: travel === 'flight' ? 'flight' : 'train',
       ground: ground === 'private' ? 'private' : 'shared',
       acts: (acts || '').split(',').filter((a) => /^[a-z0-9-]{1,40}$/.test(a)).slice(0, 40),
+      others,
     }
   } catch {
     return null

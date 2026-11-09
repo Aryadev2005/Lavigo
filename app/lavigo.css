@@ -180,3 +180,14 @@ input.m-fv.m-fv-in::placeholder{color:#B5B0C9;font-weight:700}
 
 /* trip facts: five small tiles fit on one row on desktop */
 .m-facts{grid-template-columns:repeat(auto-fit,minmax(104px,1fr))}
+
+/* planner: any other destination */
+.pl-other{margin-top:16px;padding-top:16px;border-top:1px dashed var(--m-line)}
+.pl-other-row{display:flex;gap:8px}
+.pl-other-row .inp{flex:1;min-width:0}
+.pl-other-row .btn{flex:none;gap:6px;padding:0 18px;height:48px}
+.pl-other-row .btn:disabled{opacity:.45}
+.pl-other .between b{display:inline-flex;align-items:center;gap:8px}
+.pl-other .between b svg{color:var(--m-ink3)}
+.pl-x{width:36px;height:36px;border-radius:50%;border:1px solid var(--m-line);background:#fff;display:grid;place-items:center;color:var(--m-muted2);cursor:pointer}
+.pl-x:hover{border-color:var(--m-ink);color:var(--m-ink)}

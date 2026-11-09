@@ -32,7 +32,7 @@ export function Header() {
       <header className="m-head">
         <div className="m-wrap">
           <Link href="/" className="m-logo" aria-label="Lavigo Travel Co. home">
-            <Image src="/img/logo.webp" alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 26, width: 'auto' }} />
+            <Image src="/img/logo-white.webp" alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 30, width: 'auto' }} />
           </Link>
           <nav className="m-tabs" aria-label="Main">
             {tabs.map((t) => (

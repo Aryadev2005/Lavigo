@@ -30,7 +30,7 @@ export function ItineraryDoc(p: Props) {
       <PrintBar backHref={p.backHref} fileName={p.fileName} />
       <article className="it">
         <header className="it-head">
-          <div className="it-logo"><Image src="/img/logo.webp" alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 30, width: 'auto' }} /></div>
+          <div className="it-logo"><Image src="/img/logo-white.webp" alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 30, width: 'auto' }} /></div>
           <div className="it-contact">
             <b>{BUSINESS.name}</b>
             <span>{BUSINESS.phoneDisplay} · WhatsApp</span>

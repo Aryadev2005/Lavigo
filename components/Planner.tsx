@@ -37,7 +37,8 @@ export function Planner({ destinations, minDate, initial }: Props) {
   }))
   const [tab, setTab] = useState<'plan' | 'inc'>('plan')
   const q = useMemo(() => quote(b, destinations), [b, destinations])
-  const ok = q.order.length > 0
+  const ok = q.ok
+  const [other, setOther] = useState('')
   const set = (p: Partial<Builder>) => setB((x) => ({ ...x, ...p }))
 
   const toggleDest = (k: string) => {
@@ -50,18 +51,28 @@ export function Planner({ destinations, minDate, initial }: Props) {
   const nights = (k: string, d: number) => set({ dests: { ...b.dests, [k]: Math.max(1, Math.min(10, b.dests[k] + d)) } })
   const moveUp = (k: string) => { const i = b.order.indexOf(k); if (i > 0) { const o = [...b.order]; o.splice(i, 1); o.splice(i - 1, 0, k); set({ order: o }) } }
   const toggleAct = (id: string) => set({ acts: b.acts.includes(id) ? b.acts.filter((a) => a !== id) : [...b.acts, id] })
-  const names = q.order.map((k) => bySlug.get(k)!.name)
+  const names = q.stops
+  const addOther = () => {
+    const name = other.trim().replace(/\s+/g, ' ').slice(0, 60)
+    if (name.length < 2 || b.others.some((o) => o.name.toLowerCase() === name.toLowerCase())) { setOther(''); return }
+    const match = destinations.find((d) => d.name.toLowerCase() === name.toLowerCase())
+    if (match) { if (!b.dests[match.slug]) toggleDest(match.slug); setOther(''); return }
+    set({ others: [...b.others, { name, nights: 2 }].slice(0, 10) }); setOther('')
+  }
+  const otherNights = (i: number, d: number) => set({ others: b.others.map((o, j) => (j === i ? { ...o, nights: Math.max(1, Math.min(10, o.nights + d)) } : o)) })
+  const removeOther = (i: number) => set({ others: b.others.filter((_, j) => j !== i) })
+  const priceLabel = !ok ? '₹0' : q.priced ? inr(q.total) : 'On request'
 
   const waText = ok
     ? `Hi Lavigo, I'd like a quote for this trip:\n` +
-      q.order.map((k) => `• ${bySlug.get(k)!.name}: ${b.dests[k]} nights`).join('\n') +
+      [...q.order.map((k) => `• ${bySlug.get(k)!.name}: ${b.dests[k]} nights`), ...q.others.map((o) => `• ${o.name}: ${o.nights} nights (please quote)`)].join('\n') +
       `\nStarting from: ${b.from.trim() || 'not decided'}` +
       `\nStart date: ${fmtDate(b.start, { day: 'numeric', month: 'short', year: 'numeric' })}\nTravellers: ${b.adults} adult${b.adults > 1 ? 's' : ''}${b.kids ? `, ${b.kids} child${b.kids > 1 ? 'ren' : ''}` : ''}` +
       `\nStay: ${TIERS[b.tier].name}` +
       `\nTickets: ${b.tickets === 'agency' ? `Lavigo to book (${TRAVEL[b.travel].name})` : 'I will book my own'}` +
       `\nGetting around: ${GROUND[b.ground].name}` +
       (q.chosen.length ? `\nExperiences: ${q.chosen.map((a) => a.n).join(', ')}` : '') +
-      `\nWebsite estimate: ${inr(q.total)} (${inr(q.perPerson)} per person)`
+      (q.priced ? `\nWebsite estimate: ${inr(q.total)} (${inr(q.perPerson)} per person)${q.others.length ? ` for ${q.order.map((k) => bySlug.get(k)!.name).join(' + ')}, plus the places above to quote` : ''}` : '')
     : 'Hi Lavigo, I want to plan a custom trip.'
   const pdfHref = ok ? `/plan/itinerary?dl=1&p=${encodePlan(b)}` : '#'
 
@@ -85,6 +96,28 @@ export function Planner({ destinations, minDate, initial }: Props) {
                   <div className="row">{q.order.length > 1 && i > 0 && <button type="button" className="btn b-ghost sm" onClick={() => moveUp(k)} aria-label={`Move ${bySlug.get(k)!.name} earlier`}>↑</button>}<Stepper v={b.dests[k]} on={(d) => nights(k, d)} label="nights" /></div>
                 </div>))}
             </div>)}
+          <div className="pl-other">
+            <label htmlFor="p-other" className="lbl">Somewhere else? Type any place in India or abroad</label>
+            <div className="pl-other-row">
+              <input id="p-other" className="inp" value={other} maxLength={60} placeholder="e.g. Kashmir, Andaman, Bali, Dubai"
+                onChange={(e) => setOther(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOther() } }} />
+              <button type="button" className="btn b-main" onClick={addOther} disabled={other.trim().length < 2}><Icon name="plus" size={18} />Add</button>
+            </div>
+            {q.others.length > 0 && (
+              <div className="nights" style={{ marginTop: 10 }}>
+                {b.others.map((o, i) => (
+                  <div className="between" key={o.name}>
+                    <b><Icon name="compass" size={18} /> {o.name}</b>
+                    <div className="row">
+                      <Stepper v={o.nights} on={(d) => otherNights(i, d)} label={`nights in ${o.name}`} />
+                      <button type="button" className="pl-x" onClick={() => removeOther(i)} aria-label={`Remove ${o.name}`}><Icon name="close" size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+                <p className="pl-fine" style={{ marginTop: 0 }}>We plan and price these places for you on WhatsApp.</p>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="card bstep"><h2 className="pl-h"><span className="n">2</span>From where, when and who?</h2>
@@ -158,8 +191,8 @@ export function Planner({ destinations, minDate, initial }: Props) {
         <div className="card sumcard" id="sum">
           <div className="sumhead">
             <small>{ok ? `${q.nights} nights · ${q.pax} traveller${q.pax > 1 ? 's' : ''} · ${names.join(' + ')}` : 'Your trip'}</small>
-            <div className="price">{ok ? inr(q.total) : '₹0'}</div>
-            <small>{ok ? `About ${inr(q.perPerson)} per person · estimate` : 'Pick a place to see your price'}</small>
+            <div className="price">{priceLabel}</div>
+            <small>{!ok ? 'Pick a place to see your price' : !q.priced ? 'Lavigo prices this trip on WhatsApp' : `About ${inr(q.perPerson)} per person · estimate${q.others.length ? `, plus ${q.others.map((o) => o.name).join(', ')}` : ''}`}</small>
           </div>
           <div className="tabs" role="tablist">
             <button type="button" role="tab" aria-selected={tab === 'plan'} className={tab === 'plan' ? 'on' : ''} onClick={() => setTab('plan')}>Day-by-day</button>
@@ -179,7 +212,7 @@ export function Planner({ destinations, minDate, initial }: Props) {
               </div>)}
           </div>
           <div className="sumfoot">
-            <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>This is an estimate. Lavigo confirms the final price and hotels on WhatsApp. A {ADVANCE * 100}% advance ({ok ? inr(q.advance) : '₹0'}) confirms a custom trip.</p>
+            <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>This is an estimate. Lavigo confirms the final price and hotels on WhatsApp. A {ADVANCE * 100}% advance{q.priced ? ` (${inr(q.advance)})` : ''} confirms a custom trip.</p>
             <a className={'btn b-wa b-block' + (ok ? '' : ' dis')} aria-disabled={!ok} style={ok ? undefined : { opacity: .45, pointerEvents: 'none' }} target="_blank" rel="noopener" href={waLink(waText)}>Get this quote on WhatsApp</a>
             <a className={'btn b-ghost b-block pl-dl' + (ok ? '' : ' dis')} aria-disabled={!ok} style={ok ? undefined : { opacity: .45, pointerEvents: 'none' }} target="_blank" rel="noopener" href={pdfHref}>
               <Icon name="download" size={18} />Download itinerary (PDF)
@@ -189,7 +222,7 @@ export function Planner({ destinations, minDate, initial }: Props) {
       </div>
 
       <div className="mbar">
-        <div><b>{inr(q.total)}</b><small>{ok ? `${q.nights}N · ${q.pax} travellers · estimate` : 'Pick a place'}</small></div>
+        <div><b>{priceLabel}</b><small>{ok ? `${q.nights}N · ${q.pax} travellers · estimate` : 'Pick a place'}</small></div>
         <a className="btn b-main" href="#sum">View plan</a>
       </div>
     </div>

@@ -9,7 +9,7 @@ export function Footer() {
       <div className="m-wrap">
         <div className="m-foot-g">
           <div>
-            <Image src="/img/logo.webp" alt="Lavigo" width={288} height={105} style={{ height: 30, width: 'auto', marginBottom: 12 }} />
+            <Image src="/img/logo-white.webp" alt="Lavigo" width={288} height={105} style={{ height: 30, width: 'auto', marginBottom: 12 }} />
             <p>{BUSINESS.tagline}</p>
             <p style={{ marginTop: 10 }}>{BUSINESS.address}</p>
           </div>

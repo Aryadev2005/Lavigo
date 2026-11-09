@@ -59,7 +59,7 @@ export default async function Home() {
         <div className="m-wrap m-hero-in">
           <div className="m-hero-top">
             <div>
-              <p className="m-kicker">Fixed-date group trips · Custom private trips</p>
+              <p className="m-kicker">Group journeys and private holidays</p>
               <h1 className="m-hero-h">Trips from anywhere in India,<br />planned day by day.</h1>
             </div>
             <Link href="/#moments" className="m-reel-btn">

@@ -48,7 +48,7 @@ export function HomeSearch({ destinations, departures, minDate }: { destinations
       </div>
       <div className="m-search-meta">
         <span>{tab === 'custom' ? 'Private trip on your own dates' : 'Fixed departures with a trip leader'}</span>
-        <span>Prices include 5% GST</span>
+        <span>Prices include GST</span>
       </div>
       <div className="m-fields">
         {tab === 'custom' ? (
@@ -102,7 +102,7 @@ export function HomeSearch({ destinations, departures, minDate }: { destinations
           ))}
         </div>
       )}
-      <button type="button" className="m-go" onClick={go}>SEARCH</button>
+      <button type="button" className="m-go" onClick={go}>Search trips</button>
     </div>
   )
 }
