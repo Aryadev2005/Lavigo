@@ -117,6 +117,21 @@ const paths: Record<string, React.ReactNode> = {
   ),
   play: <path d="M8 5.6v12.8c0 .7.8 1.2 1.4.8l10-6.4c.6-.4.6-1.2 0-1.6l-10-6.4c-.6-.4-1.4.1-1.4.8z" fill="currentColor" />,
   arrow: <path d="M5 12h14M13.5 6.5L19 12l-5.5 5.5" />,
+  car: (
+    <>
+      <path d="M4.2 13.2l1.7-4.6c.4-1 1.3-1.6 2.3-1.6h7.6c1 0 1.9.6 2.3 1.6l1.7 4.6" />
+      <rect x="2.8" y="13" width="18.4" height="4.8" rx="1.8" fill={F} />
+      <path d="M6 17.8v1.8M18 17.8v1.8M6.6 15.4h.01M17.4 15.4h.01" strokeWidth="2.4" />
+    </>
+  ),
+  download: <path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14" />,
+  pin: (
+    <>
+      <path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0113 0c0 4.9-6.5 11-6.5 11z" fill={F} />
+      <circle cx="12" cy="10" r="2.3" />
+    </>
+  ),
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
 }
 
 export type IconName = keyof typeof paths

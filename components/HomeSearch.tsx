@@ -3,9 +3,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { fmtDate } from '@/lib/format'
+import { CityInput } from './CityInput'
 
 type Dest = { slug: string; name: string; area: string }
-type Dep = { tripSlug: string; title: string; dest: string; date: string; nights: number }
+type Dep = { tripSlug: string; title: string; dest: string; date: string; nights: number; startCity: string }
 type Tab = 'group' | 'custom' | 'weekend'
 
 export function HomeSearch({ destinations, departures, minDate }: { destinations: Dest[]; departures: Dep[]; minDate: string }) {
@@ -15,6 +16,7 @@ export function HomeSearch({ destinations, departures, minDate }: { destinations
   const [dest, setDest] = useState(groupDests[0]?.slug ?? destinations[0]?.slug ?? '')
   const [date, setDate] = useState(minDate)
   const [pax, setPax] = useState(2)
+  const [from, setFrom] = useState('')
 
   const destList = tab === 'group' ? groupDests : destinations
   const cur = destinations.find((d) => d.slug === dest)
@@ -30,7 +32,7 @@ export function HomeSearch({ destinations, departures, minDate }: { destinations
   }
 
   const go = () => {
-    if (tab === 'custom') router.push(`/plan?dest=${dest}&date=${date}&pax=${pax}`)
+    if (tab === 'custom') router.push(`/plan?dest=${dest}&date=${date}&pax=${pax}${from.trim() ? `&from=${encodeURIComponent(from.trim())}` : ''}`)
     else if (dep) router.push(`/trips/${dep.tripSlug}`)
     else router.push(tab === 'weekend' ? '/trips?d=weekend' : `/trips?dest=${dest}`)
   }
@@ -49,11 +51,19 @@ export function HomeSearch({ destinations, departures, minDate }: { destinations
         <span>Prices include 5% GST</span>
       </div>
       <div className="m-fields">
-        <div className="m-field">
-          <span className="m-fl">From</span>
-          <span className="m-fv">Ranchi</span>
-          <span className="m-fs">Jharkhand · start &amp; end</span>
-        </div>
+        {tab === 'custom' ? (
+          <label className="m-field">
+            <span className="m-fl">From</span>
+            <CityInput id="hs-from" className="m-fv m-fv-in" value={from} onChange={setFrom} placeholder="Your city" />
+            <span className="m-fs">Any city in India</span>
+          </label>
+        ) : (
+          <div className="m-field">
+            <span className="m-fl">Starts from</span>
+            <span className="m-fv">{showDeps && dep ? dep.startCity : 'Any city'}</span>
+            <span className="m-fs">We can book your tickets</span>
+          </div>
+        )}
         <label className="m-field">
           <span className="m-fl">To</span>
           <select className="m-fv" value={dest} onChange={(e) => { setDest(e.target.value); setDepIdx(0) }}>

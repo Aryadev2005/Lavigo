@@ -32,7 +32,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
 
       <div className="card tbl-scroll">
         <table>
-          <thead><tr><th>Booking</th><th>Customer</th><th>Trip</th><th>Seats</th><th>Money</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Booking</th><th>Customer</th><th>Trip</th><th>Travellers</th><th>Money</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             {rows.length === 0 && <tr><td colSpan={7} className="muted" style={{ padding: 24, textAlign: 'center' }}>No bookings here yet.</td></tr>}
             {rows.map((b) => {
@@ -44,7 +44,15 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
                   <td><b>{b.code}</b><div className="muted" style={{ fontSize: 12 }}>{fmtDateTime(b.created_at)}</div></td>
                   <td>{b.name}<div><a href={`https://wa.me/91${b.phone}?text=${encodeURIComponent(`Hi ${b.name.split(' ')[0]}, this is Lavigo about your booking ${b.code}.`)}`} target="_blank" rel="noopener" style={{ color: 'var(--ok)', fontWeight: 600 }}>{b.phone} ↗</a></div></td>
                   <td>{b.departure.trip.title}<div className="muted" style={{ fontSize: 12 }}>{fmtDate(b.departure.depart_date, { day: 'numeric', month: 'short', year: 'numeric' })}</div></td>
-                  <td>{b.travellers}</td>
+                  <td style={{ minWidth: 200 }}>
+                    <b>{b.travellers}</b>
+                    {b.passengers && b.passengers.length > 0 ? (
+                      <ul className="paxlist">{b.passengers.map((p, i) => <li key={i}>{p.name} <span className={'gx ' + p.gender}>{p.gender === 'male' ? 'M' : 'F'}</span></li>)}</ul>
+                    ) : b.other_names ? <div className="muted" style={{ fontSize: 12 }}>{b.other_names}</div> : null}
+                    {b.passengers && b.passengers.length > 0 && (
+                      <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{b.ticket_by === 'self' ? 'Booking own tickets' : `Lavigo books tickets${b.from_city ? ` from ${b.from_city}` : ''}`}</div>
+                    )}
+                  </td>
                   <td>{inr(b.amount_total)}<div className="muted" style={{ fontSize: 12 }}>advance {inr(b.amount_advance)}{b.amount_paid > 0 && <> · paid {inr(b.amount_paid)}</>}</div></td>
                   <td><span className={'pill ' + st2}>{st2 === 'held' ? 'awaiting payment' : st2}</span>{st2 === 'held' && b.hold_expires_at && <div className="muted" style={{ fontSize: 12 }}>until {fmtDateTime(b.hold_expires_at)}</div>}</td>
                   <td style={{ minWidth: 230 }}>

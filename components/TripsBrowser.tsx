@@ -20,6 +20,7 @@ export type Row = {
   price: number | null
   seatsLeft: number
   seatsTotal: number
+  startCity: string | null
   chips: string[]
   highlights: string[]
 }
@@ -42,6 +43,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
   const [dests, setDests] = useState<string[]>([])
   const [durs, setDurs] = useState<string[]>([])
   const [buds, setBuds] = useState<string[]>([])
+  const [froms, setFroms] = useState<string[]>([])
   const [sort, setSort] = useState<Sort>('soon')
 
   // honour ?dest=nepal and ?d=weekend links from the home page
@@ -58,8 +60,15 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
     return [...m.entries()].map(([id, v]) => ({ id, ...v }))
   }, [rows])
 
+  const cityOpts = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const r of rows) if (r.startCity) m.set(r.startCity, (m.get(r.startCity) ?? 0) + 1)
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
+  }, [rows])
+
   const list = rows
     .filter((r) => !dests.length || dests.includes(r.dest))
+    .filter((r) => !froms.length || (r.startCity !== null && froms.includes(r.startCity)))
     .filter((r) => !durs.length || DUR.some((d) => durs.includes(d.id) && d.test(r.nights)))
     .filter((r) => !buds.length || (r.price !== null && BUD.some((b) => buds.includes(b.id) && b.test(r.price!))))
     .sort((a, b) => {
@@ -79,7 +88,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
   } else if (list.length) groups.push({ label: sort === 'low' ? 'PRICE: LOW TO HIGH' : 'PRICE: HIGH TO LOW', items: list })
 
   const count = list.filter((r) => r.date).length
-  const clear = () => { setDests([]); setDurs([]); setBuds([]) }
+  const clear = () => { setDests([]); setDurs([]); setBuds([]); setFroms([]) }
 
   return (
     <div className="m-list">
@@ -91,6 +100,14 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
             <label key={d.id}><input type="checkbox" checked={dests.includes(d.id)} onChange={() => setDests(toggle(dests, d.id))} /><span>{d.name}</span><small>{d.n}</small></label>
           ))}
         </fieldset>
+        {cityOpts.length > 0 && (
+          <fieldset>
+            <legend>Starting city</legend>
+            {cityOpts.map(([c, n]) => (
+              <label key={c}><input type="checkbox" checked={froms.includes(c)} onChange={() => setFroms(toggle(froms, c))} /><span>{c}</span><small>{n}</small></label>
+            ))}
+          </fieldset>
+        )}
         <fieldset>
           <legend>Duration</legend>
           {DUR.map((d) => <label key={d.id}><input type="checkbox" checked={durs.includes(d.id)} onChange={() => setDurs(toggle(durs, d.id))} /><span>{d.label}</span></label>)}
@@ -100,15 +117,15 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
           {BUD.map((b) => <label key={b.id}><input type="checkbox" checked={buds.includes(b.id)} onChange={() => setBuds(toggle(buds, b.id))} /><span>{b.label}</span></label>)}
         </fieldset>
         <div className="m-filters-note">
-          <b>Don&apos;t see your dates?</b>
-          <span>Plan a private trip and get a quote on WhatsApp.</span>
+          <b>Not near a starting city?</b>
+          <span>Book any trip and we arrange your train or flight, or plan a private trip from your own city.</span>
           <Link href="/plan">Open trip planner <Icon name="arrow" size={16} /></Link>
         </div>
       </aside>
 
       <div className="m-results">
         <div className="m-results-h">
-          <h1>{count} group departure{count === 1 ? '' : 's'} from Ranchi</h1>
+          <h1>{count} group departure{count === 1 ? '' : 's'}</h1>
           <div className="m-sort" role="group" aria-label="Sort by">
             {([['soon', 'Departing soonest'], ['low', 'Price: low to high'], ['high', 'Price: high to low']] as const).map(([k, l]) => (
               <button key={k} type="button" aria-pressed={sort === k} className={sort === k ? 'on' : undefined} onClick={() => setSort(k)}>{l}</button>
@@ -132,6 +149,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
                   <div className="m-sm m-muted2">{r.route}</div>
                   <div className="m-chips m-chips-ic">
                     {r.date && <span><Icon name="calendar" size={16} />{fmtDate(r.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
+                    {r.startCity && <span><Icon name="pin" size={16} />From {r.startCity}</span>}
                     {r.chips.map((c) => <span key={c}><Icon name={/hotel|stay/i.test(c) ? 'hotel' : /meal|breakfast|dinner|lunch/i.test(c) ? 'meal' : 'bus'} size={16} />{c}</span>)}
                   </div>
                   {r.highlights.length > 0 && <ul>{r.highlights.map((h) => <li key={h}>{h}</li>)}</ul>}

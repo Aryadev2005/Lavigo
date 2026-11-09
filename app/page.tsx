@@ -16,17 +16,18 @@ import { waLink } from '@/lib/whatsapp'
 export const revalidate = 60
 
 const FAQ = [
-  { q: 'Where does Lavigo Travel Co. run trips from?', a: `Lavigo is a travel company based in Ranchi, Jharkhand (${BUSINESS.address}). All group trips start and end in Ranchi.` },
+  { q: 'Where do Lavigo trips start from?', a: 'From anywhere in India. Each group departure shows its starting city, and Lavigo can book your train or flight to it from your own city. Custom trips start from whichever city you choose.' },
   { q: 'Which destinations does Lavigo cover?', a: 'Nepal (Pokhara and Kathmandu), Darjeeling, Sikkim, Netarhat, Puri and Goa, as fixed-date group trips or custom private trips.' },
-  { q: 'How do I book a group trip?', a: 'Pick a departure on the trip page and hold your seats online. Lavigo then confirms with you on WhatsApp, where you pay a 25% advance. The balance is paid before you travel.' },
+  { q: 'How do I book a group trip?', a: 'Pick a departure on the trip page, add each traveller\'s name and gender, and choose whether Lavigo books your train or flight tickets. Your seats are held online, and you pay a 25% advance on WhatsApp to confirm. The balance is paid before you travel.' },
   { q: 'How long are seats held before I pay?', a: 'Seats are held for 24 hours after you submit the booking form. If the advance is not paid in that time, the seats are released for other travellers.' },
-  { q: 'Can I plan a trip on my own dates?', a: 'Yes. Use the trip planner to choose places, nights, stay type, travel mode and activities. You see a day-by-day plan and a price estimate, then get the final quote on WhatsApp.' },
+  { q: 'Can I see the hotels and cars before I book?', a: 'Yes. Every trip page lists the hotels and cars used at the destination, along with what is and is not included. You can also download the full day-by-day itinerary as a PDF.' },
+  { q: 'Can I plan a trip on my own dates?', a: 'Yes. Use the trip planner to choose your starting city, places, nights, hotel type, cars and activities. You see a day-by-day plan and an estimate, can download it as a PDF, and get the final quote on WhatsApp.' },
 ]
 
 const TRUST: { t: string; s: string; c: 'lav' | 'sun'; i: IconName }[] = [
   { t: 'Seats held 24 hours', s: 'Reserve now, pay later', c: 'lav', i: 'clock' },
   { t: 'Only 25% advance', s: 'Balance before you travel', c: 'sun', i: 'wallet' },
-  { t: 'GST included', s: 'The price you see is final', c: 'lav', i: 'receipt' },
+  { t: 'From anywhere in India', s: 'We can book your tickets', c: 'lav', i: 'pin' },
   { t: 'Trip leader on board', s: 'Every group departure', c: 'sun', i: 'leader' },
 ]
 
@@ -36,7 +37,7 @@ export default async function Home() {
   const minDate = isoDate(addDays(todayISO(), 7))
 
   const departures = withDeps
-    .flatMap((t) => t.departures.filter((d) => d.seats_left > 0).map((d) => ({ tripSlug: t.slug, title: t.destination?.name ?? t.title, dest: t.destination?.slug ?? '', date: d.depart_date, nights: t.nights })))
+    .flatMap((t) => t.departures.filter((d) => d.seats_left > 0).map((d) => ({ tripSlug: t.slug, title: t.destination?.name ?? t.title, dest: t.destination?.slug ?? '', date: d.depart_date, nights: t.nights, startCity: d.start_city })))
     .sort((a, b) => a.date.localeCompare(b.date))
 
   const fromPrice = (slug: string) => {
@@ -59,7 +60,7 @@ export default async function Home() {
           <div className="m-hero-top">
             <div>
               <p className="m-kicker">Fixed-date group trips · Custom private trips</p>
-              <h1 className="m-hero-h">Trips from Ranchi,<br />planned day by day.</h1>
+              <h1 className="m-hero-h">Trips from anywhere in India,<br />planned day by day.</h1>
             </div>
             <Link href="/#moments" className="m-reel-btn">
               <span aria-hidden="true"><Icon name="play" size={16} /></span>
@@ -84,7 +85,7 @@ export default async function Home() {
         <section className="m-sec">
           <div className="m-wrap">
             <div className="m-sec-h">
-              <div><h2>Upcoming group departures</h2><p>Fixed dates, small groups, everything from Ranchi.</p></div>
+              <div><h2>Upcoming group departures</h2><p>Fixed dates, small groups and a trip leader on every departure. Join from any city.</p></div>
               <Link href="/trips" className="m-more">View all trips <Icon name="arrow" size={18} /></Link>
             </div>
             <div className="m-g4">{withDeps.slice(0, 4).map((t) => <TripCard key={t.id} trip={t} />)}</div>
@@ -126,7 +127,7 @@ export default async function Home() {
         <section className="m-sec" id="gallery">
           <div className="m-wrap">
             <div className="m-sec-h">
-              <div><h2>From our last trip</h2><p>Real travellers from Ranchi, photographed on the road in Nepal.</p></div>
+              <div><h2>From our last trip</h2><p>Real Lavigo travellers, photographed on the road in Nepal.</p></div>
               <Link href="/trips" className="m-more">See upcoming trips <Icon name="arrow" size={18} /></Link>
             </div>
             <PhotoWall photos={TRIP_PHOTOS} label="Lavigo Nepal trip" />
@@ -140,7 +141,7 @@ export default async function Home() {
             <div className="m-band-txt">
               <p className="m-kicker">Custom trip planner</p>
               <h2>Your dates, your group, your pace.</h2>
-              <p>Pick places, nights, stay type and activities. See a day-by-day plan and a price estimate instantly, then get the final quote on WhatsApp.</p>
+              <p>Start from your own city. Pick places, nights, hotels, cars and activities, see a day-by-day plan with an estimate, download it as a PDF and get the final quote on WhatsApp.</p>
               <div className="m-band-cta">
                 <Link href="/plan" className="m-btn-sun">Plan my trip</Link>
                 <a href={waLink('Hi Lavigo, I want to plan a private trip.')} target="_blank" rel="noopener" className="m-btn-ghost">Talk to us on WhatsApp</a>
@@ -155,8 +156,8 @@ export default async function Home() {
         <div className="m-wrap">
           <div className="m-sec-h"><div><h2>Booking takes three steps</h2></div></div>
           <div className="m-g3">
-            <div className="m-card m-step"><span>01</span><h3>Choose a departure</h3><p>Pick a fixed-date group trip, or plan a private one with your own places and activities.</p></div>
-            <div className="m-card m-step"><span>02</span><h3>Hold your seats</h3><p>Seats are held for 24 hours with a booking code. Nothing to pay online.</p></div>
+            <div className="m-card m-step"><span>01</span><h3>Choose a departure</h3><p>Pick a fixed-date group trip, or plan a private one from your own city. Check the hotels, cars and itinerary first.</p></div>
+            <div className="m-card m-step"><span>02</span><h3>Hold your seats</h3><p>Add each traveller and tell us if we should book your tickets. Seats are held for 24 hours. Nothing to pay online.</p></div>
             <div className="m-card m-step"><span>03</span><h3>Confirm on WhatsApp</h3><p>Pay the 25% advance on WhatsApp and we confirm. The balance is due before you travel.</p></div>
           </div>
         </div>
@@ -167,8 +168,8 @@ export default async function Home() {
           <div className="m-card m-about-c">
             <div className="m-about-pic"><Image src={ABOUT_IMAGE} alt="Lavigo travellers with the Lavigo banner at Phewa Lake, Pokhara" fill sizes="(max-width:900px) 100vw, 400px" style={{ objectFit: 'cover' }} /></div>
             <div style={{ padding: 24 }}>
-              <h2 className="m-h3">A travel team from Ranchi</h2>
-              <p className="m-muted" style={{ marginTop: 8 }}>{BUSINESS.name} runs every group trip from our office in Chutia, Samlong. A Lavigo trip leader travels with each group from the first day to the last.</p>
+              <h2 className="m-h3">One team, trips for all of India</h2>
+              <p className="m-muted" style={{ marginTop: 8 }}>{BUSINESS.name} plans every trip from our office in Ranchi and welcomes travellers from any city. A Lavigo trip leader travels with each group from the first day to the last.</p>
               <p className="m-sm" style={{ marginTop: 12 }}>{BUSINESS.address}</p>
             </div>
           </div>

@@ -99,5 +99,32 @@ ok('past departures cannot be booked', await throws(`select * from create_hold((
 await q(`update departures set status='closed' where id=$1`, [dep2.id])
 ok('closed departures cannot be booked', await throws(`select * from create_hold($1,'Name','9800000003',null,1,null)`, [dep2.id], 'departure_closed'))
 
+console.log('\nMigration 005: travellers, genders, tickets, hotels')
+await db.exec('reset role')
+await db.exec(fs.readFileSync('supabase/migrations/005_all_india.sql','utf8'))
+await db.exec('reset role')
+await db.exec(fs.readFileSync('supabase/migrations/005_all_india.sql','utf8')) // safe to run twice
+await db.exec(`grant execute on all functions in schema public to service_role; grant select on all tables in schema public to service_role;`)
+await db.exec('set role anon')
+const pub2 = await q(`select start_city from departures_public limit 1`).catch(e => [{ err: e.message }])
+ok('departures_public exposes start_city (default Ranchi)', pub2[0]?.start_city === 'Ranchi', JSON.stringify(pub2))
+ok('anon cannot call create_hold_v2', await throws(`select * from create_hold_v2('00000000-0000-0000-0000-000000000000','9876543210',null,'[]',  'self',null)`, [], 'permission denied'))
+await db.exec('reset role')
+const nep = (await q(`select jsonb_array_length(hotels) h, jsonb_array_length(cars) c from destinations where slug='nepal'`))[0]
+ok('sample hotels and cars filled', nep.h > 0 && nep.c > 0, JSON.stringify(nep))
+await db.exec('set role service_role')
+const [dep3] = await q(`insert into departures(trip_id, depart_date, price, seats_total, start_city) values ($1, current_date + 50, 4000, 10, 'Kolkata') returning id, start_city`, [trip.id])
+ok('departure can start from another city', dep3.start_city === 'Kolkata')
+const pax = JSON.stringify([{ name: 'Asha Kumari', gender: 'female' }, { name: 'Ravi Kumar', gender: 'male' }])
+const v2 = (await q(`select * from create_hold_v2($1,'9600000001',null,$2::jsonb,'agency','Patna')`, [dep3.id, pax]))[0]
+ok('v2 hold counts travellers from the list', v2.travellers === 2 && v2.amount_total === 8000 && v2.name === 'Asha Kumari')
+ok('v2 stores genders and ticket choice', v2.passengers.length === 2 && v2.passengers[1].gender === 'male' && v2.ticket_by === 'agency' && v2.from_city === 'Patna', JSON.stringify(v2.passengers))
+ok('v2 also fills other_names for old screens', v2.other_names === 'Ravi Kumar (Male)', v2.other_names)
+ok('v2 rejects a missing gender', await throws(`select * from create_hold_v2($1,'9600000002',null,'[{"name":"No Gender"}]'::jsonb,'self',null)`, [dep3.id], 'bad_gender'))
+ok('v2 rejects other genders values', await throws(`select * from create_hold_v2($1,'9600000002',null,'[{"name":"Some One","gender":"x"}]'::jsonb,'self',null)`, [dep3.id], 'bad_gender'))
+ok('v2 rejects an empty list', await throws(`select * from create_hold_v2($1,'9600000002',null,'[]'::jsonb,'self',null)`, [dep3.id], 'bad_travellers'))
+ok('v2 rejects a bad ticket choice', await throws(`select * from create_hold_v2($1,'9600000002',null,$2::jsonb,'bus',null)`, [dep3.id, pax], 'bad_ticket_by'))
+ok('v2 keeps the overselling guard', await throws(`select * from create_hold_v2($1,'9600000003',null,$2::jsonb,'self',null)`, [dep3.id, JSON.stringify(Array.from({length: 9}, (_, i) => ({ name: 'Person ' + i, gender: i % 2 ? 'male' : 'female' })))], 'not_enough_seats:8'))
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

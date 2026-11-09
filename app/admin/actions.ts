@@ -136,14 +136,18 @@ export async function saveDeparture(fd: FormData) {
   if (price < 0) back(path, 'err', 'Enter the price per person.')
   if (seats < 0 || seats > 500) back(path, 'err', 'Enter the total number of seats.')
   const status = fd.get('status') === 'closed' ? 'closed' : 'open'
+  const startCity = String(fd.get('start_city') || '').trim().replace(/\s+/g, ' ').slice(0, 60) || 'Ranchi'
   const sb = adminClient()
+  const noCityCol = (m: string) => /start_city/.test(m) && /column/i.test(m)
   if (id) {
     const { data: taken } = await sb.rpc('seats_taken', { p_departure: id })
     if (seats < Number(taken ?? 0)) back(path, 'err', `${taken} seats are already booked or held, so the total cannot go below ${taken}.`)
-    const { error } = await sb.from('departures').update({ depart_date: date, price, seats_total: seats, status }).eq('id', id)
+    let { error } = await sb.from('departures').update({ depart_date: date, price, seats_total: seats, status, start_city: startCity }).eq('id', id)
+    if (error && noCityCol(error.message)) ({ error } = await sb.from('departures').update({ depart_date: date, price, seats_total: seats, status }).eq('id', id))
     if (error) back(path, 'err', 'Could not save: ' + error.message)
   } else {
-    const { error } = await sb.from('departures').insert({ trip_id: tripId, depart_date: date, price, seats_total: seats, status })
+    let { error } = await sb.from('departures').insert({ trip_id: tripId, depart_date: date, price, seats_total: seats, status, start_city: startCity })
+    if (error && noCityCol(error.message)) ({ error } = await sb.from('departures').insert({ trip_id: tripId, depart_date: date, price, seats_total: seats, status }))
     if (error) back(path, 'err', 'Could not add: ' + error.message)
   }
   refresh(); back(path, 'ok', id ? 'Departure updated.' : 'Departure added.')
@@ -188,10 +192,23 @@ export async function saveDestination(fd: FormData) {
     activities,
     published: fd.get('published') === 'on',
   }
+  const tiers = ['budget', 'comfort', 'premium']
+  const hotels = json<Record<string, string>[]>(fd.get('hotels_json'), [])
+    .filter((h) => h.name?.trim())
+    .map((h) => ({ name: h.name.trim().slice(0, 80), place: (h.place || name).trim().slice(0, 60), tier: tiers.includes(h.tier) ? h.tier : 'comfort', stars: Math.min(5, Math.max(0, int(h.stars))), note: (h.note || '').trim().slice(0, 160) }))
+  const cars = json<Record<string, string>[]>(fd.get('cars_json'), [])
+    .filter((c) => c.name?.trim())
+    .map((c) => ({ name: c.name.trim().slice(0, 80), kind: (c.kind || '').trim().slice(0, 40), seats: Math.min(60, Math.max(1, int(c.seats, 4))), note: (c.note || '').trim().slice(0, 160) }))
   const sb = adminClient()
-  const res = id ? await sb.from('destinations').update(row).eq('id', id).select('id').single() : await sb.from('destinations').insert(row).select('id').single()
+  const save = (r: object) => (id ? sb.from('destinations').update(r).eq('id', id).select('id').single() : sb.from('destinations').insert(r).select('id').single())
+  let res = await save({ ...row, hotels, cars })
+  let note = 'Destination saved.'
+  if (res.error && /hotels|cars/.test(res.error.message) && /column/i.test(res.error.message)) {
+    res = await save(row) // database not updated yet (migration 005)
+    note = 'Saved, but hotels and cars need a database update first (run supabase/migrations/005_all_india.sql).'
+  }
   if (res.error) back(path, 'err', res.error.code === '23505' ? 'Another destination uses that slug.' : 'Could not save: ' + res.error.message)
-  refresh(); back(`/admin/destinations/${res.data!.id}`, 'ok', 'Destination saved.')
+  refresh(); back(`/admin/destinations/${res.data!.id}`, 'ok', note)
 }
 
 /* ───────────── image upload (called from the browser, already downscaled) ───────────── */

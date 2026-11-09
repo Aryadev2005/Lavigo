@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { BUSINESS } from '@/lib/config'
 import { fmtDate, fmtDateTime, inr } from '@/lib/format'
 import { adminClient, writesConfigured } from '@/lib/supabase'
+import type { Passenger, TicketBy } from '@/lib/types'
 import { waLink } from '@/lib/whatsapp'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +13,8 @@ export const metadata: Metadata = { title: 'Your booking', robots: { index: fals
 type Row = {
   code: string; name: string; travellers: number; status: 'held' | 'confirmed' | 'cancelled' | 'expired'
   hold_expires_at: string | null; amount_total: number; amount_advance: number; amount_paid: number
-  departure: { depart_date: string; trip: { title: string; slug: string; route: string } }
+  other_names: string | null; passengers?: Passenger[]; ticket_by?: TicketBy; from_city?: string | null
+  departure: { id: string; depart_date: string; start_city?: string; trip: { title: string; slug: string; route: string } }
 }
 
 export default async function BookingPage({ params }: { params: Promise<{ code: string }> }) {
@@ -20,7 +22,7 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
   if (!writesConfigured || !/^LVG-[0-9A-Za-z]{5}$/.test(code)) notFound()
   const { data } = await adminClient()
     .from('bookings')
-    .select('code,name,travellers,status,hold_expires_at,amount_total,amount_advance,amount_paid,departure:departures(depart_date,trip:trips(title,slug,route))')
+    .select('*, departure:departures(*, trip:trips(title,slug,route))') // * keeps working before and after migration 005
     .eq('code', code.toUpperCase())
     .maybeSingle()
   const b = data as unknown as Row | null
@@ -60,7 +62,9 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
         <table className="brk"><tbody>
           <tr><td>Departure</td><td>{date}</td></tr>
           <tr><td>Route</td><td style={{ textAlign: 'right', fontWeight: 500 }}>{trip.route}</td></tr>
-          <tr><td>Travellers</td><td>{b.travellers}</td></tr>
+          {b.departure.start_city && <tr><td>Starts from</td><td>{b.departure.start_city}</td></tr>}
+          <tr><td>Travellers</td><td>{b.passengers?.length ? b.passengers.map((p) => `${p.name} (${p.gender === 'male' ? 'M' : 'F'})`).join(', ') : b.travellers}</td></tr>
+          {b.ticket_by && b.passengers?.length ? <tr><td>Train / flight tickets</td><td>{b.ticket_by === 'self' ? 'You book them' : `Lavigo books them${b.from_city ? ` from ${b.from_city}` : ''}`}</td></tr> : null}
           <tr><td>Trip total (incl. GST)</td><td>{inr(b.amount_total)}</td></tr>
           <tr><td>Advance to confirm (25%)</td><td>{inr(b.amount_advance)}</td></tr>
           {b.amount_paid > 0 && <tr><td>Paid so far</td><td>{inr(b.amount_paid)}</td></tr>}
@@ -76,6 +80,7 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
         </div></div>
       )}
 
+      {(status === 'held' || status === 'confirmed') && <a className="btn b-ghost b-block" style={{ marginBottom: 10 }} href={`/trips/${trip.slug}/itinerary?dl=1&dep=${b.departure.id}`} target="_blank" rel="noopener">Download itinerary (PDF)</a>}
       {status === 'held' && <a className="btn b-wa b-block" href={wa} target="_blank" rel="noopener">Confirm on WhatsApp</a>}
       {status === 'confirmed' && <a className="btn b-wa b-block" href={waLink(`Hi Lavigo, a question about my booking ${b.code}.`)} target="_blank" rel="noopener">Message Lavigo on WhatsApp</a>}
       {(status === 'expired' || status === 'cancelled') && <Link className="btn b-main b-block" href={`/trips/${trip.slug}`}>Book this trip again</Link>}

@@ -2,11 +2,12 @@ import 'server-only'
 import seed from '@/data/seed.json'
 import { dbConfigured, publicClient } from './supabase'
 import { todayISO } from './format'
+import { withStays } from './stays'
 import type { Departure, Destination, TripWithDepartures } from './types'
 
 /* ---------- demo mode (no Supabase env): serve the seed so the site still renders ---------- */
 function demoDestinations(): Destination[] {
-  return seed.destinations.map((d, i) => ({
+  return seed.destinations.map((d, i) => withStays({
     ...(d as unknown as Destination),
     id: 'demo-dest-' + d.slug,
     gallery: d.gallery ?? [],
@@ -30,6 +31,7 @@ function demoTrips(): TripWithDepartures[] {
         seats_total: d.seats_total,
         seats_left: d.seats_total,
         status: 'open' as const,
+        start_city: (d as { start_city?: string }).start_city ?? 'Ranchi',
       }))
     return {
       id,
@@ -60,7 +62,7 @@ export async function getDestinations(): Promise<Destination[]> {
     .eq('published', true)
     .order('sort_order')
   if (error) throw new Error('getDestinations: ' + error.message)
-  return (data ?? []) as Destination[]
+  return ((data ?? []) as Destination[]).map(withStays)
 }
 
 export async function getTrips(): Promise<TripWithDepartures[]> {
@@ -83,7 +85,8 @@ export async function getTrips(): Promise<TripWithDepartures[]> {
     : { data: [], error: null }
   if (e2) throw new Error('getTrips departures: ' + e2.message)
   const byTrip = new Map<string, Departure[]>()
-  for (const d of (deps ?? []) as Departure[]) {
+  for (const raw of (deps ?? []) as Departure[]) {
+    const d = { ...raw, start_city: raw.start_city || 'Ranchi' } // column arrives with migration 005
     byTrip.set(d.trip_id, [...(byTrip.get(d.trip_id) ?? []), d])
   }
   return sortTrips(

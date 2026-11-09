@@ -1,5 +1,6 @@
 import 'server-only'
 import { adminClient } from './supabase'
+import { withStays } from './stays'
 import type { Booking, Departure, Destination, Trip } from './types'
 
 export type BookingRow = Booking & { departure: { depart_date: string; trip: { title: string; slug: string } } }
@@ -79,5 +80,5 @@ export async function listDestinationsAdmin() {
 export async function getDestinationAdmin(id: string) {
   const { data, error } = await adminClient().from('destinations').select('*').eq('id', id).maybeSingle()
   if (error) throw new Error(error.message)
-  return (data ?? null) as Destination | null
+  return data ? withStays(data as Destination) : null // starter hotels/cars until the owner saves his own
 }

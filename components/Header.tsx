@@ -17,12 +17,12 @@ const tabs: { href: string; label: string; icon: IconName; match: (p: string) =>
 
 export function Header() {
   const path = usePathname()
-  if (path.startsWith('/admin')) return null
+  if (path.startsWith('/admin') || path.endsWith('/itinerary')) return null
   return (
     <>
       <div className="m-util">
         <div className="m-wrap">
-          <span>Group trips from Ranchi · Nepal · Darjeeling · Sikkim · Netarhat</span>
+          <span className="m-util-l">Trips from anywhere in India · Nepal · Darjeeling · Sikkim · Netarhat · Puri · Goa</span>
           <span className="m-util-r">
             <a href={`tel:${BUSINESS.phoneE164}`}>{BUSINESS.phoneDisplay}</a>
             <a href={BUSINESS.instagram} target="_blank" rel="noopener">@lavigo.in</a>

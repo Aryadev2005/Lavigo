@@ -52,3 +52,14 @@ The pieces are already in place: `bookings` has `payment_provider/payment_order_
 2. Add an API route that creates a Razorpay order for the booking's `amount_advance` (receipt = booking code), and a "Pay advance" button on `/booking/[code]` next to the WhatsApp one.
 3. Add a webhook route that verifies `x-razorpay-signature` and calls `rpc('confirm_booking', {p_booking, p_amount_paid, p_provider:'razorpay', p_order_id, p_payment_id})`.
 Hold time can drop to ~30 minutes for online payment (`HOLD_HOURS` in `lib/config.ts`).
+
+## Update: all-India trips (migration 005)
+
+Run `supabase/migrations/005_all_india.sql` once in the Supabase SQL editor. It adds:
+- a starting city on every departure (default Ranchi, editable in Admin → Trips → Departures),
+- each traveller's name and gender, and who books the train/flight tickets, on every booking (`create_hold_v2`),
+- hotel and car lists on every destination (editable in Admin → Destinations), filled with starter entries.
+
+The site works before the migration too: bookings fall back to `create_hold` and keep travellers, genders and the ticket choice in the notes field, and hotels/cars come from `data/stays.json`.
+
+Itineraries download from `/trips/<slug>/itinerary` and `/plan/itinerary` (print → Save as PDF).

@@ -14,7 +14,7 @@ export default async function Destinations({ searchParams }: { searchParams: Pro
       {sp.err && <div className="errbox" role="alert">{sp.err}</div>}
       {sp.ok && <div className="okbox" role="status">{sp.ok}</div>}
       <div className="card tbl-scroll"><table>
-        <thead><tr><th>Destination</th><th>Room / night (budget · comfort · premium)</th><th>Travel from Ranchi (train · cab · flight)</th><th>Shown</th><th></th></tr></thead>
+        <thead><tr><th>Destination</th><th>Room / night (budget · comfort · premium)</th><th>Fares (train · cab · flight)</th><th>Shown</th><th></th></tr></thead>
         <tbody>{dests.map((d) => (
           <tr key={d.id}>
             <td><b>{d.name}</b><div className="muted" style={{ fontSize: 12 }}>{d.area}</div></td>

@@ -1,5 +1,11 @@
 export type Activity = { id: string; n: string; p: number; where: string }
 export type GalleryImage = { src: string; caption: string }
+export type Tier = 'budget' | 'comfort' | 'premium'
+export type Hotel = { name: string; place: string; tier: Tier; stars: number; note: string }
+export type Car = { name: string; kind: string; seats: number; note: string }
+export type Gender = 'male' | 'female'
+export type Passenger = { name: string; gender: Gender }
+export type TicketBy = 'agency' | 'self'
 
 export type Destination = {
   id: string
@@ -19,6 +25,8 @@ export type Destination = {
   travel_cab: number
   travel_flight: number
   activities: Activity[]
+  hotels: Hotel[]
+  cars: Car[]
   sort_order: number
   published: boolean
 }
@@ -50,6 +58,7 @@ export type Departure = {
   seats_total: number
   seats_left: number
   status: 'open' | 'closed'
+  start_city: string
 }
 
 export type TripWithDepartures = Trip & {
@@ -68,6 +77,9 @@ export type Booking = {
   email: string | null
   travellers: number
   other_names: string | null
+  passengers?: Passenger[]
+  ticket_by?: TicketBy
+  from_city?: string | null
   status: BookingStatus
   hold_expires_at: string | null
   amount_total: number

@@ -9,8 +9,8 @@ import { fmtDate } from '@/lib/format'
 
 export const revalidate = 60
 export const metadata: Metadata = {
-  title: 'Group trips from Ranchi',
-  description: 'Fixed-date group trips from Ranchi to Nepal, Darjeeling, Sikkim and Netarhat. Trip leader on every departure, prices with GST, seats held online.',
+  title: 'Group trips across India',
+  description: 'Fixed-date group trips to Nepal, Darjeeling, Sikkim and Netarhat from cities across India. Trip leader on every departure, hotels and cars listed, prices with GST, seats held online.',
   alternates: { canonical: '/trips' },
 }
 
@@ -32,10 +32,11 @@ export default async function Trips() {
       chips: [c.stay ? 'Hotels' : null, c.travel, c.meals].filter((x): x is string => !!x),
       highlights: t.itinerary.slice(1, 3).map((d) => d.text).filter(Boolean),
     }
-    if (!t.departures.length) return [{ ...base, key: t.id, date: null, price: null, seatsLeft: 0, seatsTotal: 0 }]
-    return t.departures.map((d) => ({ ...base, key: d.id, date: d.depart_date, price: d.price, seatsLeft: d.seats_left, seatsTotal: d.seats_total }))
+    if (!t.departures.length) return [{ ...base, key: t.id, date: null, price: null, seatsLeft: 0, seatsTotal: 0, startCity: null }]
+    return t.departures.map((d) => ({ ...base, key: d.id, date: d.depart_date, price: d.price, seatsLeft: d.seats_left, seatsTotal: d.seats_total, startCity: d.start_city }))
   })
   const dates = rows.map((r) => r.date).filter((d): d is string => !!d).sort()
+  const cities = [...new Set(rows.map((r) => r.startCity).filter((c): c is string => !!c))]
   const span = dates.length ? `${fmtDate(dates[0], { month: 'short', year: 'numeric' })}${dates.length > 1 ? ` – ${fmtDate(dates[dates.length - 1], { month: 'short', year: 'numeric' })}` : ''}` : 'Dates coming soon'
 
   return (
@@ -43,10 +44,10 @@ export default async function Trips() {
       <JsonLd data={{ '@context': 'https://schema.org', '@type': 'ItemList', itemListElement: trips.map((t, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/trips/${t.slug}`, name: t.title })) }} />
       <div className="m-strip">
         <div className="m-wrap m-strip-g">
-          <div><small>FROM</small><b>Ranchi</b></div>
+          <div><small>STARTING CITIES</small><b>{cities.length ? cities.join(', ') : 'To be announced'}</b></div>
           <div><small>TO</small><b>All destinations</b></div>
           <div><small>DEPARTURES</small><b>{span}</b></div>
-          <div><small>TRIP TYPE</small><b>Group, with trip leader</b></div>
+          <div><small>FROM ANOTHER CITY?</small><b>We book your tickets</b></div>
           <Link href="/plan" className="m-btn-sun">PLAN CUSTOM</Link>
         </div>
       </div>

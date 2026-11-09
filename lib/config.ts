@@ -2,7 +2,7 @@
 export const BUSINESS = {
   name: 'Lavigo Travel Co.',
   legalName: 'Lavigo Travel Co.',
-  tagline: 'Trips from Ranchi, planned day by day.',
+  tagline: 'Group trips and custom holidays from anywhere in India.',
   address: 'Ground Floor, Amit Complex, Near Oxford Public School, Chutia, Samlong, Ranchi, Jharkhand',
   city: 'Ranchi',
   region: 'Jharkhand',

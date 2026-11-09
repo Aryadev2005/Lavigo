@@ -31,13 +31,26 @@ export default async function DestinationEditor({ params, searchParams }: { para
         <label className="l">Cover photo</label><ImageField name="hero_image" value={d?.hero_image ?? ''} />
 
         <h3 style={{ margin: '22px 0 4px' }}>Planner prices (₹)</h3>
-        <p className="muted" style={{ fontSize: 13.5 }}>Room prices are per room per night. Travel is per person from Ranchi. The planner adds meals, a service fee and 5% GST.</p>
+        <p className="muted" style={{ fontSize: 13.5 }}>Room prices are per room per night. Travel is a typical return train or flight fare per person from major cities (used only when the customer asks Lavigo to book tickets). The planner adds meals, cars, a service fee and 5% GST. Customers see only the total, never these numbers.</p>
         <div className="grid3">{num('rate_budget', 'Room · Budget', d?.rate_budget)}{num('rate_comfort', 'Room · Comfort', d?.rate_comfort)}{num('rate_premium', 'Room · Premium', d?.rate_premium)}</div>
-        <div className="grid3">{num('travel_train', 'Travel · Train + shared cab', d?.travel_train)}{num('travel_cab', 'Travel · Train + private cab', d?.travel_cab)}{num('travel_flight', 'Travel · Flight + private cab', d?.travel_flight)}</div>
+        <div className="grid3">{num('travel_train', 'Train fare per person (return)', d?.travel_train)}{num('travel_flight', 'Flight fare per person (return)', d?.travel_flight)}<input type="hidden" name="travel_cab" value={d?.travel_cab ?? 0} /></div>
         <div className="grid2">
           <div><label className="l">Suggested nights</label><input className="inp" type="number" min={1} max={30} name="default_nights" defaultValue={d?.default_nights ?? 3} /></div>
           <div><label className="l">Places in order (comma separated)</label><input className="inp" name="places" defaultValue={(d?.places ?? []).join(', ')} placeholder="Pokhara, Kathmandu" /></div>
         </div>
+
+        <h3 style={{ margin: '22px 0 4px' }}>Hotels</h3>
+        <p className="muted" style={{ fontSize: 13.5, marginBottom: 8 }}>Shown on trip pages and in the planner (for the stay type the customer picks). Use the real hotel names you book.</p>
+        <RowsEditor name="hotels_json" addLabel="Add a hotel" initial={(d?.hotels ?? []).map((h) => ({ name: h.name, place: h.place, tier: h.tier, stars: String(h.stars ?? ''), note: h.note ?? '' }))}
+          fields={[{ key: 'name', label: 'Hotel name', placeholder: 'Hotel Lake View' }, { key: 'place', label: 'Town', placeholder: 'Pokhara' },
+            { key: 'tier', label: 'Stay type', type: 'select', options: [['budget', 'Budget'], ['comfort', 'Comfort'], ['premium', 'Premium']] }, { key: 'stars', label: 'Stars', type: 'number' },
+            { key: 'note', label: 'One line about it', type: 'textarea', placeholder: 'Lake-view rooms, 5 minutes to the boating point' }]} />
+
+        <h3 style={{ margin: '22px 0 4px' }}>Cars</h3>
+        <p className="muted" style={{ fontSize: 13.5, marginBottom: 8 }}>Vehicles used at this destination. The planner suggests the ones that fit the group.</p>
+        <RowsEditor name="cars_json" addLabel="Add a car" initial={(d?.cars ?? []).map((c) => ({ name: c.name, kind: c.kind, seats: String(c.seats ?? ''), note: c.note ?? '' }))}
+          fields={[{ key: 'name', label: 'Car', placeholder: 'Toyota Innova Crysta' }, { key: 'kind', label: 'Type', placeholder: 'SUV' }, { key: 'seats', label: 'Seats', type: 'number' },
+            { key: 'note', label: 'Used for', type: 'textarea', placeholder: 'Airport pick-up and sightseeing' }]} />
 
         <h3 style={{ margin: '22px 0 8px' }}>Experiences customers can add</h3>
         <RowsEditor name="activities_json" addLabel="Add an experience" initial={(d?.activities ?? []).map((a) => ({ n: a.n, p: String(a.p), where: a.where }))}

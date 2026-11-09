@@ -25,7 +25,7 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
       <form action={saveTrip} className="card pane" style={{ marginTop: 14 }}>
         {!isNew && <input type="hidden" name="id" value={t!.id} />}
         <div className="grid2">
-          <div><label className="l">Trip title</label><input className="inp" name="title" defaultValue={t?.title} required placeholder="Nepal Trip from Ranchi" /></div>
+          <div><label className="l">Trip title</label><input className="inp" name="title" defaultValue={t?.title} required placeholder="Nepal group trip" /></div>
           <div><label className="l">Web address (leave blank to auto-fill)</label><input className="inp" name="slug" defaultValue={t?.slug} placeholder="nepal-trip-from-ranchi" /></div>
         </div>
         <div className="grid3">
@@ -61,16 +61,17 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
       {!isNew && (
         <>
           <h2 id="departures" style={{ margin: '28px 0 6px' }}>Departures (date, price, seats)</h2>
-          <p className="muted" style={{ marginBottom: 12 }}>Customers can only book dates listed here. &quot;Left&quot; updates by itself as people book. Price is per person, including GST.</p>
+          <p className="muted" style={{ marginBottom: 12 }}>Customers can only book dates listed here. Each date can start from a different city. &quot;Left&quot; updates by itself as people book. Price is per person, including GST.</p>
           <div className="card tbl-scroll"><table>
-            <thead><tr><th>Date</th><th>Price (₹)</th><th>Total seats</th><th>Status</th><th>Booked / held / left</th><th></th></tr></thead>
+            <thead><tr><th>Date · starts from</th><th>Price (₹)</th><th>Total seats</th><th>Status</th><th>Booked / held / left</th><th></th></tr></thead>
             <tbody>
               {t!.departures.map((d) => (
                 <tr key={d.id} style={d.depart_date < today ? { opacity: 0.55 } : undefined}>
                   <td colSpan={4} style={{ padding: 0 }}>
-                    <form action={saveDeparture} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr auto', gap: 8, padding: '10px 12px', alignItems: 'center' }}>
+                    <form action={saveDeparture} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.2fr 1fr .9fr 1fr auto', gap: 8, padding: '10px 12px', alignItems: 'center' }}>
                       <input type="hidden" name="id" value={d.id} /><input type="hidden" name="trip_id" value={t!.id} />
                       <input className="inp sm" type="date" name="depart_date" defaultValue={d.depart_date} required aria-label="Departure date" />
+                      <input className="inp sm" name="start_city" defaultValue={d.start_city ?? 'Ranchi'} placeholder="Start city" aria-label="Starts from (city)" />
                       <input className="inp sm" type="number" name="price" min={0} defaultValue={d.price} required aria-label="Price per person" />
                       <input className="inp sm" type="number" name="seats_total" min={0} defaultValue={d.seats_total} required aria-label="Total seats" />
                       <select className="inp sm" name="status" defaultValue={d.status} aria-label="Status"><option value="open">Open</option><option value="closed">Closed</option></select>
@@ -83,9 +84,10 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
               ))}
               <tr>
                 <td colSpan={4} style={{ padding: 0 }}>
-                  <form action={saveDeparture} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr auto', gap: 8, padding: '10px 12px', alignItems: 'center', background: 'var(--lav3)' }}>
+                  <form action={saveDeparture} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.2fr 1fr .9fr 1fr auto', gap: 8, padding: '10px 12px', alignItems: 'center', background: 'var(--lav3)' }}>
                     <input type="hidden" name="trip_id" value={t!.id} />
                     <input className="inp sm" type="date" name="depart_date" min={today} required aria-label="New departure date" />
+                    <input className="inp sm" name="start_city" placeholder="Starts from, e.g. Kolkata" aria-label="Starts from (city)" />
                     <input className="inp sm" type="number" name="price" min={0} placeholder="Price" required aria-label="Price per person" />
                     <input className="inp sm" type="number" name="seats_total" min={0} placeholder="Seats" required aria-label="Total seats" />
                     <select className="inp sm" name="status" aria-label="Status"><option value="open">Open</option><option value="closed">Closed</option></select>

@@ -1,0 +1,81 @@
+{
+  "_note": "Starting hotel and car lists for each destination, keyed by destination slug. Used until the owner edits them in Admin → Destinations. Replace the descriptive names with the real hotels you book.",
+  "nepal": {
+    "hotels": [
+      { "name": "Lakeside guesthouse", "place": "Pokhara", "tier": "budget", "stars": 2, "note": "Walk to Phewa Lake, hot water, Wi-Fi" },
+      { "name": "Lakeside hotel", "place": "Pokhara", "tier": "comfort", "stars": 3, "note": "Lake or garden view rooms, breakfast buffet" },
+      { "name": "Lake-view resort", "place": "Pokhara", "tier": "premium", "stars": 4, "note": "Mountain-facing rooms, pool, spa" },
+      { "name": "Thamel guesthouse", "place": "Kathmandu", "tier": "budget", "stars": 2, "note": "Central Thamel, walk to shops and cafes" },
+      { "name": "Thamel hotel", "place": "Kathmandu", "tier": "comfort", "stars": 3, "note": "Quiet lane in Thamel, rooftop restaurant" },
+      { "name": "Heritage boutique hotel", "place": "Kathmandu", "tier": "premium", "stars": 4, "note": "Courtyard rooms, garden, airport transfers" }
+    ],
+    "cars": [
+      { "name": "Toyota Hiace", "kind": "Van", "seats": 12, "note": "Group transfers and the Pokhara–Kathmandu drive" },
+      { "name": "Mahindra Scorpio", "kind": "SUV", "seats": 6, "note": "Hill roads and sunrise point" },
+      { "name": "Hyundai sedan", "kind": "Sedan", "seats": 4, "note": "City sightseeing for couples" }
+    ]
+  },
+  "darjeeling": {
+    "hotels": [
+      { "name": "Mall Road homestay", "place": "Darjeeling", "tier": "budget", "stars": 2, "note": "Near the Mall, heaters in winter" },
+      { "name": "Hill-view hotel", "place": "Darjeeling", "tier": "comfort", "stars": 3, "note": "Kanchenjunga-view rooms, 5 minutes to the Mall" },
+      { "name": "Colonial heritage hotel", "place": "Darjeeling", "tier": "premium", "stars": 4, "note": "Fireplace rooms, high tea, valley views" }
+    ],
+    "cars": [
+      { "name": "Tata Sumo / Mahindra Bolero", "kind": "Hill jeep", "seats": 9, "note": "NJP pick-up and Tiger Hill" },
+      { "name": "Toyota Innova Crysta", "kind": "SUV", "seats": 6, "note": "Private sightseeing" },
+      { "name": "Swift Dzire", "kind": "Sedan", "seats": 4, "note": "Couples and small families" }
+    ]
+  },
+  "sikkim": {
+    "hotels": [
+      { "name": "MG Marg guesthouse", "place": "Gangtok", "tier": "budget", "stars": 2, "note": "Walk to MG Marg" },
+      { "name": "Gangtok city hotel", "place": "Gangtok", "tier": "comfort", "stars": 3, "note": "Valley-view rooms, lift, room heaters" },
+      { "name": "Mountain-view resort", "place": "Gangtok", "tier": "premium", "stars": 4, "note": "Kanchenjunga views, spa, restaurant" },
+      { "name": "Lachung lodge", "place": "Lachung", "tier": "budget", "stars": 2, "note": "Simple rooms, hot meals, heaters" },
+      { "name": "Lachung riverside hotel", "place": "Lachung", "tier": "comfort", "stars": 3, "note": "River-facing rooms, heated blankets" },
+      { "name": "Lachung valley resort", "place": "Lachung", "tier": "premium", "stars": 4, "note": "Cottages with valley views" }
+    ],
+    "cars": [
+      { "name": "Mahindra Xylo / Bolero", "kind": "Hill SUV", "seats": 7, "note": "North Sikkim permit vehicle" },
+      { "name": "Toyota Innova Crysta", "kind": "SUV", "seats": 6, "note": "Gangtok sightseeing and NJP transfers" },
+      { "name": "Tempo Traveller", "kind": "Mini coach", "seats": 12, "note": "Large groups on the NJP road" }
+    ]
+  },
+  "netarhat": {
+    "hotels": [
+      { "name": "Forest-side guesthouse", "place": "Netarhat", "tier": "budget", "stars": 2, "note": "Walk to the sunset point" },
+      { "name": "Plateau hotel", "place": "Netarhat", "tier": "comfort", "stars": 3, "note": "Garden, bonfire area, home-style meals" },
+      { "name": "Netarhat cottage resort", "place": "Netarhat", "tier": "premium", "stars": 3, "note": "Private cottages among the pines" }
+    ],
+    "cars": [
+      { "name": "Toyota Innova Crysta", "kind": "SUV", "seats": 6, "note": "AC, door-to-door from Ranchi" },
+      { "name": "Tempo Traveller", "kind": "Mini coach", "seats": 12, "note": "Group departures" },
+      { "name": "Swift Dzire", "kind": "Sedan", "seats": 4, "note": "Couples" }
+    ]
+  },
+  "puri": {
+    "hotels": [
+      { "name": "Swargadwar beach lodge", "place": "Puri", "tier": "budget", "stars": 2, "note": "Near the beach and the temple road" },
+      { "name": "Sea-facing hotel", "place": "Puri", "tier": "comfort", "stars": 3, "note": "Sea-view rooms, restaurant" },
+      { "name": "Beach resort", "place": "Puri", "tier": "premium", "stars": 4, "note": "Pool, private beach access" }
+    ],
+    "cars": [
+      { "name": "Toyota Innova Crysta", "kind": "SUV", "seats": 6, "note": "Konark and Chilika day trips" },
+      { "name": "Swift Dzire", "kind": "Sedan", "seats": 4, "note": "Temple and city runs" },
+      { "name": "Tempo Traveller", "kind": "Mini coach", "seats": 12, "note": "Large families and groups" }
+    ]
+  },
+  "goa": {
+    "hotels": [
+      { "name": "Baga/Calangute guesthouse", "place": "North Goa", "tier": "budget", "stars": 2, "note": "5 minutes to the beach" },
+      { "name": "North Goa hotel", "place": "North Goa", "tier": "comfort", "stars": 3, "note": "Pool, near Candolim beach" },
+      { "name": "Beachfront resort", "place": "South Goa", "tier": "premium", "stars": 5, "note": "On the beach, pools and spa" }
+    ],
+    "cars": [
+      { "name": "Toyota Innova Crysta", "kind": "SUV", "seats": 6, "note": "Airport transfers and sightseeing" },
+      { "name": "Swift Dzire", "kind": "Sedan", "seats": 4, "note": "Couples" },
+      { "name": "Tempo Traveller", "kind": "Mini coach", "seats": 12, "note": "Groups" }
+    ]
+  }
+}
