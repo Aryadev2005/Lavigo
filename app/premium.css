@@ -179,3 +179,63 @@ footer.m-foot{background:var(--pine-deep);color:#CFC8EA}
   .m-hero{padding:44px 0 90px}
   .m-search{padding:4px 16px 52px}
 }
+
+/* sticky header on every screen; anchors land beneath header + section tabs */
+.m-td-main>[id],.m-td-side{scroll-margin-top:calc(var(--head-h,84px) + 70px)}
+@media(max-width:1020px){.m-head .m-wrap{padding-top:6px;padding-bottom:2px;gap:4px 12px}.m-tabs{margin:0 -4px}.m-tabs a{padding:8px 10px}}
+
+/* trip section tabs: flush under the header, gold underline on the section being read */
+.m-stabs{margin-top:20px;box-shadow:none}
+.m-stabs .m-wrap{gap:26px}
+.m-stabs a{border-bottom:2px solid transparent;color:var(--moss);transition:color .2s,border-color .2s}
+.m-stabs a:hover{color:var(--pine);border-bottom-color:var(--gold-soft)}
+.m-stabs a.on{color:var(--pine);border-bottom-color:var(--gold)}
+
+/* FAQs inside a trip card: boxed rows with breathing room */
+.m-faq-flat{padding:16px 20px;margin:0 0 10px;border:1px solid #E8E4F1;border-radius:14px;background:var(--ivory)}
+.m-faq-flat:last-child{margin-bottom:0}
+.m-faq-flat summary{gap:16px}
+
+/* search box: fields read as controls (chevron, hover lift, gold ring while open) */
+.m-field{position:relative;transition:background .18s,box-shadow .18s}
+.m-field:hover{background:var(--lav3,#F6F3FE)}
+.m-field:focus-within,.m-field:has(.pk-btn[aria-expanded="true"]){background:#fff;box-shadow:inset 0 0 0 2px var(--gold)}
+.m-field .pk-btn::before{content:"";position:absolute;inset:0}
+.m-go{display:inline-flex;align-items:center;gap:10px;transition:background .2s,transform .2s}
+.m-go span{transition:transform .2s}.m-go:hover span{transform:translateX(4px)}
+.m-field.m-static{cursor:default}
+
+/* themed select + date picker */
+button.pk-btn{font:inherit;text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:32px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23221847' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:14px}
+button.pk-btn.m-fv{background-position:right 0 center;padding-right:24px;min-height:34px}
+button.pk-btn.inp{height:auto;min-height:46px;color:var(--text)}
+button.pk-btn.empty{color:var(--moss)}
+button.pk-btn:focus-visible{outline:2px solid var(--lav);outline-offset:2px}
+.pk-req{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.pk-pop{position:fixed;z-index:400;background:#fff;border:1px solid #E1DCEC;border-radius:14px;box-shadow:0 24px 50px -20px rgba(22,15,48,.45);color:var(--pine);animation:pk-in .14s ease-out}
+@keyframes pk-in{from{opacity:0;transform:translateY(-4px)}}
+.pk-list{list-style:none;margin:0;padding:6px;max-height:280px;overflow-y:auto}
+.pk-list li{padding:10px 12px;border-radius:9px;font-size:15px;cursor:pointer}
+.pk-list li.act{background:var(--lav3,#F6F3FE)}
+.pk-list li.sel{font-weight:600;color:var(--pine);background:var(--sunbg,#FFF4DC)}
+.pk-list li.sel::after{content:"¹3";float:right;color:var(--gold)}
+.pk-cal{padding:12px;width:292px}
+.pk-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.pk-cal-head b{font-weight:600;font-size:15px}
+.pk-cal-head button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;font-size:22px;line-height:1;color:var(--pine);cursor:pointer}
+.pk-cal-head button:hover:not(:disabled){background:var(--lav3,#F6F3FE)}
+.pk-cal-head button:disabled{opacity:.25;cursor:default}
+.pk-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.pk-cal-grid .dow{font-size:12px;color:var(--moss);padding:6px 0}
+.pk-cal-grid button{aspect-ratio:1;border:0;border-radius:50%;background:transparent;font:inherit;font-size:14px;color:var(--pine);cursor:pointer}
+.pk-cal-grid button:hover:not(:disabled){background:var(--lav3,#F6F3FE)}
+.pk-cal-grid button.today{box-shadow:inset 0 0 0 1px var(--gold)}
+.pk-cal-grid button.sel{background:var(--pine);color:#fff}
+.pk-cal-grid button:disabled{color:#C7C2D6;cursor:default}
+
+/* admin selects keep the native popup but wear the theme when closed */
+.adm select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23221847' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:14px}

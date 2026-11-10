@@ -7,6 +7,7 @@ import { BookingForm } from '@/components/BookingForm'
 import { GalleryGrid } from '@/components/Gallery'
 import { Icon, WhatsAppGlyph } from '@/components/Icons'
 import { JsonLd } from '@/components/JsonLd'
+import { SectionTabs } from '@/components/SectionTabs'
 import { seatLabel, tripChips } from '@/components/TripCard'
 import { ADVANCE, BUSINESS, CHILD_FACTOR, GST, HOLD_HOURS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTripBySlug, getTrips } from '@/lib/data'
@@ -120,16 +121,14 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
           : <div className="m-gal-art"><Art theme={trip.destination?.theme ?? ['#3A0CA3', '#4CC9F0', '#F1FAEE']} h={300} id={trip.slug} /></div>}
       </div>
 
-      <nav className="m-stabs" aria-label="Trip sections">
-        <div className="m-wrap">
-          <a href="#itinerary">Itinerary</a>
-          <a href="#inclusions">Inclusions</a>
-          {(hotels.length > 0 || cars.length > 0) && <a href="#stays">Hotels &amp; cars</a>}
-          <a href="#book">Dates &amp; price</a>
-          <a href="#policies">Policies</a>
-          {trip.faqs.length > 0 && <a href="#faqs">FAQs</a>}
-        </div>
-      </nav>
+      <SectionTabs items={[
+        { id: 'itinerary', label: 'Itinerary' },
+        { id: 'inclusions', label: 'Inclusions' },
+        ...(hotels.length > 0 || cars.length > 0 ? [{ id: 'stays', label: 'Hotels & cars' }] : []),
+        { id: 'book', label: 'Dates & price' },
+        { id: 'policies', label: 'Policies' },
+        ...(trip.faqs.length > 0 ? [{ id: 'faqs', label: 'FAQs' }] : []),
+      ]} />
 
       <div className="m-wrap m-td">
         <div className="m-td-main">

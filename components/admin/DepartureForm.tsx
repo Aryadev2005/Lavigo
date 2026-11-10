@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/Pickers'
 import { saveDeparture } from '@/app/admin/actions'
 
 type Dep = { id: string; trip_id: string; depart_date: string; price: number; seats_total: number; status: 'open' | 'closed'; start_city?: string }
@@ -14,7 +15,7 @@ export function DepartureForm({ dep, tripId, trips, back, minDate }: { dep?: Dep
           <div className="fld" style={{ gridColumn: '1 / -1' }}><label className="l">Trip</label>
             <select className="inp" name="trip_id" required defaultValue=""><option value="" disabled>Choose a trip…</option>{trips.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</select></div>
         )}
-        <div className="fld"><label className="l">Departure date</label><input className="inp" type="date" name="depart_date" defaultValue={dep?.depart_date} min={dep ? undefined : minDate} required /></div>
+        <div className="fld"><label className="l">Departure date</label><DatePicker name="depart_date" defaultValue={dep?.depart_date} min={dep ? undefined : minDate} required ariaLabel="Departure date" /></div>
         <div className="fld"><label className="l">Starts from (city)</label><input className="inp" name="start_city" defaultValue={dep?.start_city ?? ''} placeholder="Ranchi" /></div>
         <div className="fld"><label className="l">Price per person (₹, incl. GST)</label><input className="inp" type="number" name="price" min={0} defaultValue={dep?.price} required /></div>
         <div className="fld"><label className="l">Total seats</label><input className="inp" type="number" name="seats_total" min={1} max={500} defaultValue={dep?.seats_total} required /></div>

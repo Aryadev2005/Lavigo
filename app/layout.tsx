@@ -4,8 +4,10 @@ import { Footer } from '@/components/Footer'
 import { FooterGate } from '@/components/FooterGate'
 import { Header } from '@/components/Header'
 import { JsonLd } from '@/components/JsonLd'
+import { SmoothScroll } from '@/components/Lenis'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getSite } from '@/lib/site'
+import 'lenis/dist/lenis.css'
 import './globals.css'
 import './mmt.css'
 import './lavigo.css'
@@ -61,6 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <a className="skip" href="#main">Skip to content</a>
         <JsonLd data={ld} />
+        <SmoothScroll />
         <Header topbar={home.topbar} instagram={business.instagram} />
         <main id="main">{children}</main>
         <FooterGate><Footer /></FooterGate>

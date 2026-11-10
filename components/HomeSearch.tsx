@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { fmtDate } from '@/lib/format'
 import { CityInput } from './CityInput'
+import { DatePicker, Select } from './Pickers'
 
 type Dest = { slug: string; name: string; area: string }
 type Dep = { tripSlug: string; title: string; dest: string; date: string; nights: number; startCity: string }
@@ -64,35 +65,31 @@ export function HomeSearch({ destinations, departures, minDate }: { destinations
             <span className="m-fs">We can book your tickets</span>
           </div>
         )}
-        <label className="m-field">
+        <div className="m-field">
           <span className="m-fl">To</span>
-          <select className="m-fv" value={dest} onChange={(e) => { setDest(e.target.value); setDepIdx(0) }}>
-            {destList.map((d) => <option key={d.slug} value={d.slug}>{d.name}</option>)}
-          </select>
+          <Select className="m-fv" ariaLabel="Destination" value={dest} onChange={(v) => { setDest(v); setDepIdx(0) }} options={destList.map((d) => ({ value: d.slug, label: d.name }))} />
           <span className="m-fs">{cur?.area}</span>
-        </label>
+        </div>
         {showDeps ? (
-          <label className="m-field">
+          <div className="m-field">
             <span className="m-fl">Departure</span>
-            <select className="m-fv" value={Math.min(depIdx, deps.length - 1)} onChange={(e) => setDepIdx(+e.target.value)}>
-              {deps.map((x, i) => <option key={x.date + x.tripSlug} value={i}>{fmtDate(x.date, { day: 'numeric', month: 'short', year: '2-digit' })}</option>)}
-            </select>
+            <Select className="m-fv" ariaLabel="Departure date" value={String(Math.min(depIdx, deps.length - 1))} onChange={(v) => setDepIdx(+v)}
+              options={deps.map((x, i) => ({ value: String(i), label: fmtDate(x.date, { day: 'numeric', month: 'short', year: '2-digit' }) }))} />
             <span className="m-fs">{dep ? `${fmtDate(dep.date, { weekday: 'long' })} · ${dep.nights}N / ${dep.nights + 1}D` : ''}</span>
-          </label>
+          </div>
         ) : (
-          <label className="m-field">
+          <div className="m-field">
             <span className="m-fl">{tab === 'custom' ? 'Start date' : 'Departure'}</span>
-            <input className="m-fv" type="date" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} />
+            <DatePicker className="m-fv" ariaLabel="Start date" value={date} min={minDate} onChange={setDate} />
             <span className="m-fs">{tab === 'custom' ? 'Any date that suits you' : 'Next dates coming soon'}</span>
-          </label>
+          </div>
         )}
-        <label className="m-field">
+        <div className="m-field">
           <span className="m-fl">Travellers</span>
-          <select className="m-fv" value={pax} onChange={(e) => setPax(+e.target.value)}>
-            {[1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20].map((n) => <option key={n} value={n}>{n} {n > 1 ? 'Adults' : 'Adult'}</option>)}
-          </select>
+          <Select className="m-fv" ariaLabel="Travellers" value={String(pax)} onChange={(v) => setPax(+v)}
+            options={[1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20].map((n) => ({ value: String(n), label: `${n} ${n > 1 ? 'Adults' : 'Adult'}` }))} />
           <span className="m-fs">Children pay 60%</span>
-        </label>
+        </div>
       </div>
       {departures.length > 0 && (
         <div className="m-popular">
@@ -102,7 +99,7 @@ export function HomeSearch({ destinations, departures, minDate }: { destinations
           ))}
         </div>
       )}
-      <button type="button" className="m-go" onClick={go}>Search trips</button>
+      <button type="button" className="m-go" onClick={go}>Search trips <span aria-hidden="true">→</span></button>
     </div>
   )
 }

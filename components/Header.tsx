@@ -2,6 +2,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 import { BUSINESS } from '@/lib/config'
 import { waLink } from '@/lib/whatsapp'
 import { Icon, WhatsAppGlyph, type IconName } from './Icons'
@@ -17,6 +18,17 @@ const tabs: { href: string; label: string; icon: IconName; match: (p: string) =>
 
 export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: string; instagram?: string }) {
   const path = usePathname()
+  const head = useRef<HTMLElement>(null)
+  // Publish the live header height so sticky sub-bars and anchor scrolling can sit flush beneath it.
+  useEffect(() => {
+    const el = head.current
+    if (!el) return
+    const set = () => document.documentElement.style.setProperty('--head-h', el.offsetHeight + 'px')
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [path])
   if (path.startsWith('/admin') || path.endsWith('/itinerary')) return null
   return (
     <>
@@ -29,7 +41,7 @@ export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: st
           </span>
         </div>
       </div>
-      <header className="m-head">
+      <header className="m-head" ref={head}>
         <div className="m-wrap">
           <Link href="/" className="m-logo" aria-label="Lavigo Travel Co. home">
             <Image src="/img/logo-white.webp" alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 30, width: 'auto' }} />

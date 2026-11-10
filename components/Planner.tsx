@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Art } from './Art'
 import { CityInput } from './CityInput'
+import { DatePicker } from './Pickers'
 import { Icon } from './Icons'
 import { ADVANCE } from '@/lib/config'
 import { addDays, fmtDate, inr, isoDate } from '@/lib/format'
@@ -126,7 +127,7 @@ export function Planner({ destinations, minDate, initial }: Props) {
             <CityInput id="p-from" value={b.from} onChange={(v) => set({ from: v.slice(0, 60) })} placeholder="Where does your trip start? e.g. Patna, Delhi, Bengaluru" />
           </div>
           <div className="two">
-            <div className="fld"><label htmlFor="p-start">Start date</label><input id="p-start" className="inp" type="date" min={minDate} value={b.start} onChange={(e) => e.target.value && set({ start: e.target.value })} /></div>
+            <div className="fld"><label htmlFor="p-start">Start date</label><DatePicker id="p-start" min={minDate} value={b.start} onChange={(v) => set({ start: v })} /></div>
             <div className="fld"><label>Back home on</label><div className="inp pl-ro">{ok ? fmtDate(addDays(b.start, q.nights), { weekday: 'short', day: 'numeric', month: 'short' }) : '—'}</div></div>
           </div>
           <div className="two who">
