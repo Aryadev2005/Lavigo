@@ -69,6 +69,22 @@ body,.m-page{background:var(--sand)}
 .m-hero-top{margin-bottom:36px}
 .m-reel-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3);font-weight:500;backdrop-filter:blur(6px)}
 .m-reel-btn span{background:var(--gold);color:var(--pine)}
+
+/* hero logo intro: wordmark + mark in the hero's bottom margin, on the plain indigo background */
+.hl{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;padding-bottom:30px;pointer-events:none}
+.hl-mtn{position:absolute;left:0;right:0;bottom:0;width:100%;height:50%;color:var(--sage);opacity:.3}
+.hl-word{position:relative;display:flex;align-items:flex-end;gap:clamp(1px,.4vw,6px);font-family:var(--m-head);font-weight:400;font-size:clamp(28px,4.6vw,60px);letter-spacing:.04em;color:var(--ivory)}
+.hl-l{display:inline-block;opacity:1}
+.hl-dot{width:clamp(6px,.9vw,10px);height:clamp(6px,.9vw,10px);border-radius:50%;background:var(--gold);margin:0 0 .35em 3px;opacity:1}
+@media (prefers-reduced-motion:no-preference){
+  .hl-l{opacity:0;animation:hl-letter .7s cubic-bezier(.2,.9,.3,1) forwards}
+  .hl-dot{opacity:0;transform:scale(.3);animation:hl-dot .6s cubic-bezier(.3,1.6,.4,1) forwards}
+  .hl-mtn{animation:hl-drift 50s ease-in-out infinite}
+}
+@keyframes hl-letter{from{opacity:0;transform:translateY(.22em)}to{opacity:1;transform:translateY(0)}}
+@keyframes hl-dot{from{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}to{opacity:1;transform:scale(1)}}
+@keyframes hl-drift{0%,100%{transform:translateX(-2%)}50%{transform:translateX(2%)}}
+@media(max-width:600px){.hl{padding-bottom:18px}.hl-word{gap:2px}}
 .m-search{border-radius:20px;box-shadow:0 30px 60px -30px rgba(12,8,28,.65);padding:6px 28px 56px;background:var(--ivory)}
 .m-search-tabs{border-bottom-color:#E4E0EE}
 .m-search-tabs button{font-weight:500;color:var(--moss)}
@@ -101,6 +117,18 @@ input.m-fv.m-fv-in{font-size:24px}
 .m-chips>span{background:transparent;border:1px solid #E4E0EE;border-radius:999px;padding:4px 10px}
 .m-chips>span svg{color:var(--gold)}
 .m-seat{background:transparent;border:1px solid var(--gold-soft);color:var(--m-sunink);border-radius:999px;font-weight:600}
+.m-seat.low{background:var(--warnbg);color:var(--warn);border-color:transparent}
+
+/* month filter chips: home "Upcoming departures" and the Group trips page */
+.m-mchips{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 12px;margin-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.m-mchips button{flex:0 0 auto;border:1px solid #E1DCEC;background:#fff;color:var(--pine);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:pointer}
+.m-mchips button small{font-weight:600;opacity:.7}
+.m-mchips button:hover{border-color:var(--gold)}
+.m-mchips button.on{background:var(--pine);border-color:var(--pine);color:#fff}
+.m-mchips button.on small{opacity:.85}
+.m-mchips button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.m-mgroup-h{font-family:var(--m-head);color:var(--pine);font-size:17px;font-weight:500;margin:22px 0 12px}
+.m-mgroup-h:first-child{margin-top:0}
 .m-chip-ink{border-radius:999px!important}
 .m-chip-lav{border-radius:999px!important;background:transparent!important;border:1px solid #D9D4E8;color:var(--pine)!important}
 .m-trip-foot{border-top:1px solid #EEEBF5}
@@ -234,6 +262,52 @@ button.pk-btn:focus-visible{outline:2px solid var(--lav);outline-offset:2px}
 .pk-cal-grid button.today{box-shadow:inset 0 0 0 1px var(--gold)}
 .pk-cal-grid button.sel{background:var(--pine);color:#fff}
 .pk-cal-grid button:disabled{color:#C7C2D6;cursor:default}
+
+/* trip story */
+.m-story-lead{font-family:var(--m-head);font-size:20px;line-height:1.5;color:var(--pine);font-style:italic;border-left:3px solid var(--gold);padding-left:16px;margin:4px 0 14px}
+.m-story-p{line-height:1.7;color:var(--moss);margin-bottom:12px}
+.m-story-p:last-child{margin-bottom:0}
+
+/* trip highlights chips */
+.m-hi-chips{display:flex;flex-wrap:wrap;gap:10px}
+.m-hi-chip{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:500;color:var(--pine);background:var(--sand);border:1px solid #E8E4F1;border-radius:999px;padding:7px 14px}
+.m-hi-chip svg{color:var(--gold)}
+
+/* day-by-day expandable timeline */
+.it-tl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.it-tl-head h2{margin:0}
+.it-tl-day{border-top:1px solid #ECEAF2}
+.it-tl-day:first-of-type{border-top:0}
+.it-tl-sum{display:flex;align-items:center;gap:14px;width:100%;padding:16px 0;background:none;border:0;text-align:left;cursor:pointer;font:inherit}
+.it-tl-n{flex:none;width:34px;height:34px;border-radius:50%;background:transparent;border:1px solid var(--gold);color:var(--pine);display:grid;place-items:center;font-family:var(--m-head);font-weight:500}
+.it-tl-meta{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.it-tl-meta b{font-size:16px;color:var(--pine);font-weight:600}
+.it-tl-meta small{color:var(--moss);font-size:13px}
+.it-tl-chev{flex:none;color:var(--moss);transition:transform .2s}
+.it-tl-day.open .it-tl-chev{transform:rotate(180deg)}
+.it-tl-body{display:flex;gap:18px;padding:0 0 20px 48px}
+.it-tl-pic{flex:0 0 200px;height:140px;border-radius:12px;overflow:hidden;position:relative}
+.it-tl-text{flex:1;min-width:0;color:var(--moss);line-height:1.65}
+.it-tl-text p{margin-bottom:10px}
+.it-tl-hi{margin-top:6px;padding-left:18px}
+.it-tl-hi li{margin-bottom:4px}
+@media(max-width:700px){.it-tl-body{flex-direction:column;padding-left:0}.it-tl-pic{flex:none;width:100%}}
+
+/* places you'll visit */
+.m-places{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.m-place{border:1px solid #E8E4F1;border-radius:14px;overflow:hidden;background:var(--ivory)}
+.m-place-pic{position:relative;height:140px}
+.m-place b{display:block;padding:12px 14px 0;color:var(--pine);font-size:16px}
+.m-place p{padding:6px 14px 14px;color:var(--moss);font-size:14px;line-height:1.55}
+
+/* good to know */
+.m-gtk{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.m-gtk-item b{display:block;color:var(--pine);margin-bottom:4px}
+.m-gtk-item p{color:var(--moss);font-size:14px;line-height:1.6}
+
+/* things to carry */
+.m-carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 18px;padding-left:18px;margin-top:4px}
+.m-carry li{color:var(--moss);line-height:1.8}
 
 /* admin selects keep the native popup but wear the theme when closed */
 .adm select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;cursor:pointer;

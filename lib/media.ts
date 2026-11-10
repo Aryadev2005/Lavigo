@@ -1,13 +1,10 @@
 // Photos and videos used by the public pages that are not managed from the admin panel.
 // Videos live in /public/video (H.264 .mp4, 720p for reels, kept under ~6 MB each)
 // with a .webp poster frame next to each one. Edit labels and captions freely.
+// The home hero itself has no video or photo: see components/HeroLogoIntro.tsx.
 
 export type Reel = { poster: string; label: string; video?: string }
 export type Photo = { src: string; caption: string; wide?: boolean }
-
-// Background video for the home hero (muted loop). Set to null to show HERO_IMAGE only.
-export const HERO_VIDEO: string | null = '/video/hero.mp4'
-export const HERO_IMAGE = '/video/hero.webp'
 
 // "Trip moments" on the home page: vertical 9:16 clips. Hover previews them; click plays with sound.
 export const REELS: Reel[] = [

@@ -6,6 +6,7 @@ import { Art } from '@/components/Art'
 import { BookingForm } from '@/components/BookingForm'
 import { GalleryGrid } from '@/components/Gallery'
 import { Icon, WhatsAppGlyph } from '@/components/Icons'
+import { ItineraryTimeline } from '@/components/ItineraryTimeline'
 import { JsonLd } from '@/components/JsonLd'
 import { SectionTabs } from '@/components/SectionTabs'
 import { seatLabel, tripChips } from '@/components/TripCard'
@@ -26,7 +27,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const trip = await getTripBySlug((await params).slug)
   if (!trip) return {}
   const dep = trip.departures[0]
-  const desc = `${trip.title}: ${trip.nights}N/${trip.nights + 1}D group trip${dep ? ` starting from ${dep.start_city}` : ''}. ${trip.route}.` + (dep ? ` From ${inr(dep.price)} per person incl. GST, next departure ${fmtDate(dep.depart_date, { day: 'numeric', month: 'long', year: 'numeric' })}.` : '')
+  const story = (trip.story ?? '').trim().split(/\n{2,}/)[0]?.slice(0, 160)
+  const desc = (story ? `${story} ` : '') + `${trip.title}: ${trip.nights}N/${trip.nights + 1}D group trip${dep ? ` starting from ${dep.start_city}` : ''}. ${trip.route}.` + (dep ? ` From ${inr(dep.price)} per person incl. GST, next departure ${fmtDate(dep.depart_date, { day: 'numeric', month: 'long', year: 'numeric' })}.` : '')
   return {
     title: trip.title,
     description: desc,
@@ -63,6 +65,26 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
     return pool[i] ?? null
   }
 
+  // Story content (migration 007). Absent on a database that hasn't run it yet, or just empty.
+  const story = (trip.story ?? '').trim()
+  const storyParas = story ? story.split(/\n{2,}/).filter(Boolean) : []
+  const highlights = (trip.highlights ?? []).filter(Boolean)
+  const places = (trip.places ?? []).filter((p) => p?.name)
+  const goodToKnow = (trip.good_to_know ?? []).filter((g) => g?.title && g?.text)
+  const thingsToCarry = (trip.things_to_carry ?? []).filter(Boolean)
+  const placeName = trip.destination?.name ?? dest?.name ?? trip.title
+  const timelineDays = trip.itinerary.map((d, i) => ({
+    n: i + 1,
+    date: dep ? fmtDate(addDays(dep.depart_date, i), { weekday: 'short', day: 'numeric', month: 'short' }) : undefined,
+    title: d.title,
+    text: d.description || d.text || '',
+    highlights: d.highlights,
+    meals: d.meals,
+    stay: d.stay,
+    travel: d.travel,
+    image: dayPhoto(i)?.src ?? null,
+  }))
+
   const jsonLd = [
     {
       '@context': 'https://schema.org',
@@ -74,7 +96,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       image: trip.image ? `${SITE_URL}${trip.image}` : undefined,
       touristType: 'Group travellers',
       provider: { '@id': `${SITE_URL}/#agency` },
-      itinerary: { '@type': 'ItemList', itemListElement: trip.itinerary.map((d, i) => ({ '@type': 'ListItem', position: i + 1, name: d.title, description: d.text })) },
+      itinerary: { '@type': 'ItemList', itemListElement: trip.itinerary.map((d, i) => ({ '@type': 'ListItem', position: i + 1, name: d.title, description: d.description || d.text })) },
       offers: trip.departures.map((d) => ({
         '@type': 'Offer',
         url,
@@ -122,12 +144,11 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       </div>
 
       <SectionTabs items={[
+        ...(storyParas.length ? [{ id: 'story', label: 'Story' }] : []),
         { id: 'itinerary', label: 'Itinerary' },
-        { id: 'inclusions', label: 'Inclusions' },
-        ...(hotels.length > 0 || cars.length > 0 ? [{ id: 'stays', label: 'Hotels & cars' }] : []),
-        { id: 'book', label: 'Dates & price' },
-        { id: 'policies', label: 'Policies' },
-        ...(trip.faqs.length > 0 ? [{ id: 'faqs', label: 'FAQs' }] : []),
+        ...(places.length ? [{ id: 'places', label: 'Places' }] : []),
+        ...(goodToKnow.length ? [{ id: 'good-to-know', label: 'Good to know' }] : []),
+        { id: 'book', label: 'Dates & booking' },
       ]} />
 
       <div className="m-wrap m-td">
@@ -143,23 +164,41 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             </div>
           </div>
 
+          {storyParas.length > 0 && (
+            <div className="m-card m-pad" id="story">
+              <h2 className="m-h3">The story of {placeName}</h2>
+              <p className="m-story-lead">{storyParas[0]}</p>
+              {storyParas.slice(1).map((para, i) => <p key={i} className="m-story-p">{para}</p>)}
+            </div>
+          )}
+
+          {highlights.length > 0 && (
+            <div className="m-card m-pad">
+              <h2 className="m-h3">Trip highlights</h2>
+              <div className="m-hi-chips">
+                {highlights.map((h) => <span key={h} className="m-hi-chip"><Icon name="compass" size={16} />{h}</span>)}
+              </div>
+            </div>
+          )}
+
           <div className="m-card m-pad" id="itinerary">
-            <h2 className="m-h3">Day-by-day itinerary</h2>
-            {trip.itinerary.map((x, i) => {
-              const p = dayPhoto(i)
-              return (
-                <div className={'m-day' + (p ? ' has-pic' : '')} key={i}>
-                  <span className="m-day-n">{i + 1}</span>
-                  <div>
-                    <small className="m-muted">Day {i + 1}{dep ? ` · ${fmtDate(addDays(dep.depart_date, i), { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}</small>
-                    <b>{x.title}</b>
-                    <p>{x.text}</p>
-                  </div>
-                  {p && <div className="m-day-pic"><Image src={p.src} alt={p.caption} fill sizes="(max-width:900px) 100vw, 200px" style={{ objectFit: 'cover' }} /></div>}
-                </div>
-              )
-            })}
+            <ItineraryTimeline days={timelineDays} />
           </div>
+
+          {places.length > 0 && (
+            <div className="m-card m-pad" id="places">
+              <h2 className="m-h3">Places you&apos;ll visit</h2>
+              <div className="m-places">
+                {places.map((p) => (
+                  <div className="m-place" key={p.name}>
+                    {p.image && <div className="m-place-pic"><Image src={p.image} alt={p.name} fill sizes="(max-width:600px) 100vw, 260px" style={{ objectFit: 'cover' }} /></div>}
+                    <b>{p.name}</b>
+                    <p>{p.about}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="m-card m-pad m-inc" id="inclusions">
             <div>
@@ -204,6 +243,24 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
                   </ul>
                 </>
               )}
+            </div>
+          )}
+
+          {goodToKnow.length > 0 && (
+            <div className="m-card m-pad" id="good-to-know">
+              <h2 className="m-h3">Good to know</h2>
+              <div className="m-gtk">
+                {goodToKnow.map((g) => (
+                  <div className="m-gtk-item" key={g.title}><b>{g.title}</b><p>{g.text}</p></div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {thingsToCarry.length > 0 && (
+            <div className="m-card m-pad" id="carry">
+              <h2 className="m-h3">Things to carry</h2>
+              <ul className="m-carry">{thingsToCarry.map((x) => <li key={x}>{x}</li>)}</ul>
             </div>
           )}
 

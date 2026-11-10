@@ -5,12 +5,13 @@ import { TIER_LABEL, stars } from '@/lib/stays'
 import type { Car, Hotel } from '@/lib/types'
 import { PrintBar } from './PrintBar'
 
-export type ItinDay = { n: number; date?: string; title: string; text: string }
+export type ItinDay = { n: number; date?: string; title: string; text: string; highlights?: string[]; meals?: string; stay?: string; travel?: string }
 
 type Props = {
   kind: string
   title: string
   route?: string
+  story?: string
   facts: [string, string][]
   days: ItinDay[]
   included: string[]
@@ -50,6 +51,13 @@ export async function ItineraryDoc(p: Props) {
           {p.facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
         </dl>
 
+        {p.story && (
+          <section className="it-sec">
+            <h2>The story</h2>
+            {p.story.split(/\n{2,}/).map((para, i) => <p key={i} className="it-muted">{para}</p>)}
+          </section>
+        )}
+
         <section className="it-sec">
           <h2>Day by day</h2>
           <ol className="it-days">
@@ -60,6 +68,10 @@ export async function ItineraryDoc(p: Props) {
                   {d.date && <small>{d.date}</small>}
                   <h3>{d.title}</h3>
                   {d.text && <p>{d.text}</p>}
+                  {(d.meals || d.stay || d.travel) && (
+                    <p className="it-muted">{[d.meals && `Meals: ${d.meals}`, d.stay && `Stay: ${d.stay}`, d.travel && `Travel: ${d.travel}`].filter(Boolean).join(' · ')}</p>
+                  )}
+                  {d.highlights && d.highlights.length > 0 && <ul>{d.highlights.map((h) => <li key={h}>{h}</li>)}</ul>}
                 </div>
               </li>
             ))}

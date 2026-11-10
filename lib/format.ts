@@ -21,6 +21,16 @@ export const todayISO = () => isoDate(new Date())
 
 export const daysTo = (s: string) => Math.ceil((parseDate(s).getTime() - Date.now()) / 864e5)
 
+// "28 Nov – 2 Dec" (or "28 – 30 Nov" when the trip doesn't cross a month).
+export function dateRangeLabel(depart: string, nights: number) {
+  const start = parseDate(depart)
+  const end = addDays(depart, nights)
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
+  const a = fmtDate(start, { day: 'numeric', month: sameMonth ? undefined : 'short' })
+  const b = fmtDate(end, { day: 'numeric', month: 'short' })
+  return `${a} – ${b}`
+}
+
 export const fmtDateTime = (iso: string) =>
   new Date(iso).toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata',

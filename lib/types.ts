@@ -31,8 +31,21 @@ export type Destination = {
   published: boolean
 }
 
-export type ItineraryDay = { title: string; text: string; image?: string | null }
+// Day-by-day detail. `description`/`highlights`/`meals`/`stay`/`travel` arrive with migration 007;
+// trips saved before it only have {title, text, image}, which still renders (text stands in for description).
+export type ItineraryDay = {
+  title: string
+  text?: string  // the old short blurb; trips saved after migration 007 use `description` instead
+  image?: string | null
+  description?: string
+  highlights?: string[]
+  meals?: string   // e.g. "B/L/D"
+  stay?: string    // hotel or town for the night
+  travel?: string  // e.g. "6 h drive, 200 km"
+}
 export type Faq = { q: string; a: string }
+export type TripPlace = { name: string; about: string; image?: string | null }
+export type GoodToKnow = { title: string; text: string }
 
 export type Trip = {
   id: string
@@ -49,6 +62,12 @@ export type Trip = {
   exclusions: string[]
   faqs: Faq[]
   published: boolean
+  // Story content (migration 007). Absent on a database that hasn't run it yet.
+  story?: string
+  highlights?: string[]
+  places?: TripPlace[]
+  good_to_know?: GoodToKnow[]
+  things_to_carry?: string[]
 }
 
 export type Departure = {

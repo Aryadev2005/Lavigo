@@ -218,9 +218,22 @@ export async function saveTrip(fd: FormData) {
   if (title.length < 3) back(path, 'err', 'Give the trip a title.')
   const nights = int(fd.get('nights'), -1)
   if (nights < 0 || nights > 30) back(path, 'err', 'Nights must be between 0 and 30.')
-  const itinerary = json<{ title: string; text: string; image?: string }[]>(fd.get('itinerary_json'), [])
+  const itinerary = json<{ title: string; description?: string; meals?: string; stay?: string; travel?: string; highlights?: string; image?: string }[]>(fd.get('itinerary_json'), [])
     .filter((d) => d.title?.trim())
-    .map((d) => { const img = cleanImage(d.image); return { title: d.title.trim(), text: (d.text || '').trim(), ...(img ? { image: img } : {}) } })
+    .map((d) => {
+      const img = cleanImage(d.image)
+      const description = (d.description || '').trim()
+      const highlights = lines(d.highlights ?? null)
+      return {
+        title: d.title.trim(),
+        description, // old readers fall back to `text`, which only exists on trips saved before this form changed
+        ...(d.meals?.trim() ? { meals: d.meals.trim().slice(0, 20) } : {}),
+        ...(d.stay?.trim() ? { stay: d.stay.trim().slice(0, 80) } : {}),
+        ...(d.travel?.trim() ? { travel: d.travel.trim().slice(0, 80) } : {}),
+        ...(highlights.length ? { highlights: highlights.slice(0, 10) } : {}),
+        ...(img ? { image: img } : {}),
+      }
+    })
   const faqs = json<{ q: string; a: string }[]>(fd.get('faqs_json'), []).filter((f) => f.q?.trim() && f.a?.trim()).map((f) => ({ q: f.q.trim(), a: f.a.trim() }))
   const row = {
     title,
@@ -238,10 +251,24 @@ export async function saveTrip(fd: FormData) {
   }
   if (!row.slug) back(path, 'err', 'The web address (slug) cannot be empty.')
   const gallery = cleanGallery(fd.get('gallery_json'))
+  const story = {
+    story: text(fd.get('story'), 8000),
+    highlights: json<{ text: string }[]>(fd.get('highlights_json'), []).filter((h) => h.text?.trim()).map((h) => h.text.trim().slice(0, 140)).slice(0, 20),
+    places: json<{ name: string; about: string; image?: string }[]>(fd.get('places_json'), [])
+      .filter((p) => p.name?.trim())
+      .map((p) => { const img = cleanImage(p.image); return { name: p.name.trim().slice(0, 80), about: (p.about || '').trim().slice(0, 600), ...(img ? { image: img } : {}) } }),
+    good_to_know: json<{ title: string; text: string }[]>(fd.get('good_to_know_json'), []).filter((g) => g.title?.trim() && g.text?.trim()).map((g) => ({ title: g.title.trim().slice(0, 80), text: g.text.trim().slice(0, 600) })),
+    things_to_carry: lines(fd.get('things_to_carry')).slice(0, 40),
+  }
   const sb = adminClient()
   const save = (r: object) => (id ? sb.from('trips').update(r).eq('id', id).select('id').single() : sb.from('trips').insert(r).select('id').single())
-  let res = await save({ ...row, gallery })
+  const storyColumnMissing = (e: { message: string } | null) => !!e && /story|highlights|good_to_know|things_to_carry|places/.test(e.message) && /column/i.test(e.message)
+  let res = await save({ ...row, gallery, ...story })
   let note = id ? 'Trip saved. The website updates within a minute.' : 'Trip created. Now add its departure dates below.'
+  if (res.error && storyColumnMissing(res.error)) {
+    res = await save({ ...row, gallery })
+    note = 'Saved, but the story, places and good-to-know fields need the latest database update (007_trip_story.sql).'
+  }
   if (res.error && /gallery/.test(res.error.message) && /column/i.test(res.error.message)) {
     res = await save(row)
     note = 'Saved, but the trip photo gallery needs the latest database update (006_admin_console.sql).'

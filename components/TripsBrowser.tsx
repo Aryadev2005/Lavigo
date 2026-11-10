@@ -4,7 +4,10 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { Art } from './Art'
 import { Icon } from './Icons'
-import { fmtDate, inr } from '@/lib/format'
+import { MonthChips } from './MonthChips'
+import { dateRangeLabel, fmtDate, inr } from '@/lib/format'
+import { monthsFromDates } from '@/lib/months'
+import { useMonthFilter } from '@/lib/useMonthFilter'
 
 export type Row = {
   key: string
@@ -45,6 +48,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
   const [buds, setBuds] = useState<string[]>([])
   const [froms, setFroms] = useState<string[]>([])
   const [sort, setSort] = useState<Sort>('soon')
+  const [month, setMonth] = useMonthFilter()
 
   // honour ?dest=nepal and ?d=weekend links from the home page
   useEffect(() => {
@@ -66,11 +70,14 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
     return [...m.entries()].sort((a, b) => b[1] - a[1])
   }, [rows])
 
-  const list = rows
+  const preMonth = rows
     .filter((r) => !dests.length || dests.includes(r.dest))
     .filter((r) => !froms.length || (r.startCity !== null && froms.includes(r.startCity)))
     .filter((r) => !durs.length || DUR.some((d) => durs.includes(d.id) && d.test(r.nights)))
     .filter((r) => !buds.length || (r.price !== null && BUD.some((b) => buds.includes(b.id) && b.test(r.price!))))
+  const months = monthsFromDates(preMonth.map((r) => r.date).filter((d): d is string => !!d))
+
+  const list = (month ? preMonth.filter((r) => r.date?.slice(0, 7) === month) : preMonth)
     .sort((a, b) => {
       if (sort === 'low') return (a.price ?? 1e9) - (b.price ?? 1e9)
       if (sort === 'high') return (b.price ?? -1) - (a.price ?? -1)
@@ -88,7 +95,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
   } else if (list.length) groups.push({ label: sort === 'low' ? 'PRICE: LOW TO HIGH' : 'PRICE: HIGH TO LOW', items: list })
 
   const count = list.filter((r) => r.date).length
-  const clear = () => { setDests([]); setDurs([]); setBuds([]); setFroms([]) }
+  const clear = () => { setDests([]); setDurs([]); setBuds([]); setFroms([]); setMonth(null) }
 
   return (
     <div className="m-list">
@@ -124,6 +131,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
       </aside>
 
       <div className="m-results">
+        <MonthChips months={months} selected={month} onSelect={setMonth} />
         <div className="m-results-h">
           <h1>{count} group departure{count === 1 ? '' : 's'}</h1>
           <div className="m-sort" role="group" aria-label="Sort by">
@@ -148,7 +156,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
                   <Link href={`/trips/${r.slug}`} className="m-row-t">{r.title}</Link>
                   <div className="m-sm m-muted2">{r.route}</div>
                   <div className="m-chips m-chips-ic">
-                    {r.date && <span><Icon name="calendar" size={16} />{fmtDate(r.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
+                    {r.date && <span><Icon name="calendar" size={16} />{dateRangeLabel(r.date, r.nights)}</span>}
                     {r.startCity && <span><Icon name="pin" size={16} />From {r.startCity}</span>}
                     {r.chips.map((c) => <span key={c}><Icon name={/hotel|stay/i.test(c) ? 'hotel' : /meal|breakfast|dinner|lunch/i.test(c) ? 'meal' : 'bus'} size={16} />{c}</span>)}
                   </div>
@@ -156,7 +164,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
                 </div>
                 <div className="m-row-pr">
                   <div>
-                    {r.date && <span className={'m-seat' + (r.seatsLeft === 0 ? ' sold' : '')}>{r.seatsLeft === 0 ? 'Sold out' : r.seatsLeft < r.seatsTotal ? `${r.seatsLeft} seats left` : `${r.seatsTotal}-seat group`}</span>}
+                    {r.date && <span className={'m-seat' + (r.seatsLeft === 0 ? ' sold' : r.seatsLeft > 0 && r.seatsLeft < 5 ? ' low' : '')}>{r.seatsLeft === 0 ? 'Sold out' : r.seatsLeft < 5 ? 'Few seats left' : r.seatsLeft < r.seatsTotal ? `${r.seatsLeft} seats left` : `${r.seatsTotal}-seat group`}</span>}
                     {r.price !== null ? (
                       <>
                         <div className="m-price m-price-lg">{inr(r.price)}</div>

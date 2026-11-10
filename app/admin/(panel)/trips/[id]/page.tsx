@@ -6,6 +6,7 @@ import { DepartureForm } from '@/components/admin/DepartureForm'
 import { GalleryEditor } from '@/components/admin/GalleryEditor'
 import { ImageField } from '@/components/admin/ImageField'
 import { RowsEditor } from '@/components/admin/RowsEditor'
+import { WordCountField } from '@/components/admin/WordCountField'
 import { Icon } from '@/components/Icons'
 import { Flash, GenderBar, Head, SeatMeter, dDay, money } from '@/components/admin/ui'
 import { getTripAdmin, listDestinationsAdmin } from '@/lib/admin-data'
@@ -37,7 +38,7 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
 
       {!isNew && (
         <nav className="ad-jump" aria-label="Sections">
-          <a href="#basics">Basics</a><a href="#photos">Photos</a><a href="#days">Day by day</a><a href="#included">Included</a><a href="#faqs">Questions</a><a href="#departures">Departures</a>
+          <a href="#basics">Basics</a><a href="#photos">Photos</a><a href="#story">Story</a><a href="#days">Day by day</a><a href="#places">Places</a><a href="#included">Included</a><a href="#good-to-know">Good to know</a><a href="#faqs">Questions</a><a href="#departures">Departures</a>
         </nav>
       )}
 
@@ -71,11 +72,37 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
           <GalleryEditor name="gallery_json" initial={(t?.gallery ?? []).map((g) => ({ src: g.src, caption: g.caption }))} />
         </section>
 
+        <section className="card pane" id="story">
+          <h2 className="ad-h2">The story</h2>
+          <p className="ad-sub">3–5 paragraphs about the place: history, culture, what it feels like to be there. Shown above the itinerary, with the first paragraph highlighted.</p>
+          <WordCountField name="story" defaultValue={t?.story ?? ''} placeholder="Write the story of this place…" />
+          <label className="l" style={{ marginTop: 18 }}>Highlights</label>
+          <p className="hint">Short phrases, shown as chips. For example &quot;Sunrise at Sarangkot&quot;.</p>
+          <RowsEditor name="highlights_json" addLabel="Add a highlight" itemLabel="Highlight" initial={(t?.highlights ?? []).map((h) => ({ text: h }))}
+            fields={[{ key: 'text', label: 'Highlight', placeholder: 'Sunrise at Sarangkot' }]} />
+        </section>
+
         <section className="card pane" id="days">
           <h2 className="ad-h2">Day by day</h2>
-          <p className="ad-sub">One entry per day, in order. Add a photo to a day to show it beside that day on the website and in the PDF.</p>
-          <RowsEditor name="itinerary_json" addLabel="Add a day" itemLabel="Day" initial={(t?.itinerary ?? []).map((d) => ({ title: d.title, text: d.text, image: d.image ?? '' }))}
-            fields={[{ key: 'title', label: 'Title', placeholder: 'Ranchi → Raxaul → Pokhara' }, { key: 'text', label: 'What happens', type: 'textarea', placeholder: 'Leave Ranchi at 6 am…' }, { key: 'image', label: 'Photo for this day (optional)', type: 'image' }]} />
+          <p className="ad-sub">One entry per day, in order. Write a full description (2–4 paragraphs); add a photo to show it beside that day on the website and in the PDF.</p>
+          <RowsEditor name="itinerary_json" addLabel="Add a day" itemLabel="Day"
+            initial={(t?.itinerary ?? []).map((d) => ({ title: d.title, description: d.description ?? d.text ?? '', meals: d.meals ?? '', stay: d.stay ?? '', travel: d.travel ?? '', highlights: (d.highlights ?? []).join('\n'), image: d.image ?? '' }))}
+            fields={[
+              { key: 'title', label: 'Title', placeholder: 'Ranchi → Raxaul → Pokhara' },
+              { key: 'meals', label: 'Meals', placeholder: 'B/D' },
+              { key: 'stay', label: 'Stay (hotel/town)', placeholder: 'Pokhara' },
+              { key: 'travel', label: 'Travel', placeholder: '6 h drive, 200 km' },
+              { key: 'description', label: 'Full description (2–4 paragraphs)', type: 'textarea', placeholder: 'Leave Ranchi at 6 am…' },
+              { key: 'highlights', label: 'Highlights for this day (one per line)', type: 'textarea', placeholder: 'Sunrise at Sarangkot' },
+              { key: 'image', label: 'Photo for this day (optional)', type: 'image' },
+            ]} />
+        </section>
+
+        <section className="card pane" id="places">
+          <h2 className="ad-h2">Places you&apos;ll visit</h2>
+          <p className="ad-sub">The towns or sights the story is about. 2–3 sentences each.</p>
+          <RowsEditor name="places_json" addLabel="Add a place" itemLabel="Place" initial={(t?.places ?? []).map((p) => ({ name: p.name, about: p.about, image: p.image ?? '' }))}
+            fields={[{ key: 'name', label: 'Place', placeholder: 'Pokhara' }, { key: 'about', label: 'About', type: 'textarea', placeholder: 'Two or three sentences about this place.' }, { key: 'image', label: 'Photo', type: 'image' }]} />
         </section>
 
         <section className="card pane" id="included">
@@ -85,6 +112,16 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
             <div className="fld"><label className="l" htmlFor="t-inc">Included</label><textarea id="t-inc" className="inp" name="inclusions" defaultValue={(t?.inclusions ?? []).join('\n')} style={{ minHeight: 160 }} placeholder={'Hotel stays (twin sharing)\nBreakfast and dinner'} /></div>
             <div className="fld"><label className="l" htmlFor="t-exc">Not included</label><textarea id="t-exc" className="inp" name="exclusions" defaultValue={(t?.exclusions ?? []).join('\n')} style={{ minHeight: 160 }} placeholder={'Lunch\nEntry tickets'} /></div>
           </div>
+        </section>
+
+        <section className="card pane" id="good-to-know">
+          <h2 className="ad-h2">Good to know</h2>
+          <p className="ad-sub">Best time to visit, weather and clothing, documents needed, currency, food, network/SIM, altitude or walking level — whatever matters for this trip.</p>
+          <RowsEditor name="good_to_know_json" addLabel="Add a note" itemLabel="Note" initial={(t?.good_to_know ?? []).map((g) => ({ title: g.title, text: g.text }))}
+            fields={[{ key: 'title', label: 'Title', placeholder: 'Documents' }, { key: 'text', label: 'Text', type: 'textarea', placeholder: 'Indian citizens need a passport or voter ID. No visa required.' }]} />
+          <label className="l" style={{ marginTop: 18 }}>Things to carry</label>
+          <textarea className="inp" name="things_to_carry" defaultValue={(t?.things_to_carry ?? []).join('\n')} style={{ minHeight: 120 }} placeholder={'Warm jacket\nComfortable walking shoes'} />
+          <p className="hint">One item per line.</p>
         </section>
 
         <section className="card pane" id="faqs">

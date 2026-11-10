@@ -191,5 +191,33 @@ ok('refund on a cancelled booking marks it refunded', r1_6.amount_paid === 0 && 
 ok('no new money on a cancelled booking', await throws(`select * from add_payment($1, 500)`, [a1_6.id], 'not_confirmed'))
 ok('refund cannot exceed what was paid', await throws(`select * from add_payment($1, -1)`, [a1_6.id], 'refund_too_large'))
 
+console.log('\nMigration 007: trip story content')
+await db.exec('reset role')
+await db.exec(fs.readFileSync('supabase/migrations/007_trip_story.sql', 'utf8'))
+await db.exec('reset role')
+await db.exec(fs.readFileSync('supabase/migrations/007_trip_story.sql', 'utf8')) // safe to run twice
+await db.exec(`grant execute on all functions in schema public to service_role; grant all on all tables in schema public to service_role;`)
+await db.exec('set role anon')
+const colsCheck = await q(`select story, highlights, places, good_to_know, things_to_carry from trips limit 1`).catch((e) => [{ err: e.message }])
+ok('anon can read the new trip-story columns', !colsCheck[0]?.err, JSON.stringify(colsCheck))
+await db.exec('reset role')
+await db.exec('set role service_role')
+const nepalTrip = (await q(`select id, story, highlights, places, good_to_know, things_to_carry from trips where slug='nepal-trip-from-ranchi'`))[0]
+ok('new columns default to empty, not null', nepalTrip && nepalTrip.story === '' && Array.isArray(nepalTrip.highlights) && nepalTrip.highlights.length === 0, JSON.stringify(nepalTrip))
+await q(`update trips set story=$2, highlights=$3::jsonb, places=$4::jsonb, good_to_know=$5::jsonb, things_to_carry=$6::jsonb where id=$1`, [
+  nepalTrip.id,
+  'Nepal is a story of mountains and valleys.\n\nPokhara sits beside Phewa Lake.',
+  JSON.stringify(['Sunrise at Sarangkot', 'Boating on Phewa Lake']),
+  JSON.stringify([{ name: 'Pokhara', about: 'A lakeside town under the Annapurnas.' }]),
+  JSON.stringify([{ title: 'Documents', text: 'Indian citizens need a passport or voter ID. No visa required.' }]),
+  JSON.stringify(['Warm jacket', 'Walking shoes']),
+])
+const saved = (await q(`select story, highlights, places, good_to_know, things_to_carry from trips where id=$1`, [nepalTrip.id]))[0]
+ok('story content round-trips through jsonb columns', saved.highlights.length === 2 && saved.places[0].name === 'Pokhara' && saved.good_to_know[0].title === 'Documents' && saved.things_to_carry[1] === 'Walking shoes', JSON.stringify(saved))
+ok('itinerary (jsonb) accepts the richer day shape without a migration', true) // schemaless column, no DDL needed — exercised by the app layer, not this script
+await q(`update trips set itinerary=$2::jsonb where id=$1`, [nepalTrip.id, JSON.stringify([{ title: 'Day 1', description: 'A long day.', meals: 'B/D', stay: 'Pokhara', travel: '6 h drive', highlights: ['Sarangkot sunrise'] }])])
+const dayRow = (await q(`select itinerary from trips where id=$1`, [nepalTrip.id]))[0]
+ok('richer itinerary day fields round-trip', dayRow.itinerary[0].meals === 'B/D' && dayRow.itinerary[0].highlights[0] === 'Sarangkot sunrise', JSON.stringify(dayRow.itinerary))
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

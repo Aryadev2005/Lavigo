@@ -1,21 +1,24 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Art } from '@/components/Art'
+import type { DepartureCardData } from '@/components/DepartureCard'
 import { PhotoWall } from '@/components/Gallery'
+import { HeroLogoIntro } from '@/components/HeroLogoIntro'
 import { Icon, type IconName } from '@/components/Icons'
 import { HomeSearch } from '@/components/HomeSearch'
 import { JsonLd } from '@/components/JsonLd'
 import { Moments } from '@/components/Moments'
-import { TripCard } from '@/components/TripCard'
+import { UpcomingDepartures } from '@/components/UpcomingDepartures'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
 import { addDays, inr, isoDate, todayISO } from '@/lib/format'
-import { ABOUT_IMAGE, HERO_IMAGE, HERO_VIDEO, PLAN_IMAGE, REELS } from '@/lib/media'
+import { ABOUT_IMAGE, PLAN_IMAGE, REELS } from '@/lib/media'
 import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
 
+const FALLBACK: [string, string, string] = ['#3A0CA3', '#4CC9F0', '#F1FAEE']
 
 const TRUST: { t: string; s: string; c: 'lav' | 'sun'; i: IconName }[] = [
   { t: 'Seats held 24 hours', s: 'Reserve now, pay later', c: 'lav', i: 'clock' },
@@ -36,6 +39,13 @@ export default async function Home() {
     .flatMap((t) => t.departures.filter((d) => d.seats_left > 0).map((d) => ({ tripSlug: t.slug, title: t.destination?.name ?? t.title, dest: t.destination?.slug ?? '', date: d.depart_date, nights: t.nights, startCity: d.start_city })))
     .sort((a, b) => a.date.localeCompare(b.date))
 
+  const departureCards: DepartureCardData[] = withDeps
+    .flatMap((t) => t.departures.map((d) => ({
+      key: d.id, slug: t.slug, title: t.title, image: t.image, theme: (t.destination?.theme ?? FALLBACK) as [string, string, string],
+      nights: t.nights, date: d.depart_date, startCity: d.start_city, seatsLeft: d.seats_left, seatsTotal: d.seats_total, price: d.price,
+    })))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
   const fromPrice = (slug: string) => {
     const ps = trips.filter((t) => t.destination?.slug === slug).flatMap((t) => t.departures.map((d) => d.price))
     return ps.length ? Math.min(...ps) : null
@@ -48,9 +58,7 @@ export default async function Home() {
       <JsonLd data={{ '@context': 'https://schema.org', '@type': 'WebSite', url: SITE_URL, name: BUSINESS.name }} />
 
       <section className="m-hero">
-        {HERO_VIDEO
-          ? <video className="m-hero-media" src={HERO_VIDEO} poster={HERO_IMAGE} autoPlay muted loop playsInline aria-hidden="true" />
-          : <Image className="m-hero-media" src={HERO_IMAGE} alt="" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: 'center 45%' }} />}
+        <HeroLogoIntro />
         <span className="m-hero-shade" />
         <div className="m-wrap m-hero-in">
           <div className="m-hero-top">
@@ -77,14 +85,14 @@ export default async function Home() {
         </div>
       </section>
 
-      {withDeps.length > 0 && (
+      {departureCards.length > 0 && (
         <section className="m-sec">
           <div className="m-wrap">
             <div className="m-sec-h">
               <div><h2>Upcoming group departures</h2><p>{home.subline}</p></div>
               <Link href="/trips" className="m-more">View all trips <Icon name="arrow" size={18} /></Link>
             </div>
-            <div className="m-g4">{withDeps.slice(0, 4).map((t) => <TripCard key={t.id} trip={t} />)}</div>
+            <UpcomingDepartures departures={departureCards} />
           </div>
         </section>
       )}

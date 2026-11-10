@@ -26,8 +26,9 @@ export default async function TripItinerary({ params, searchParams }: { params: 
       kind="Group trip itinerary"
       title={trip.title}
       route={trip.route}
+      story={trip.story}
       facts={facts}
-      days={trip.itinerary.map((d, i) => ({ n: i + 1, date: date(i), title: d.title, text: d.text }))}
+      days={trip.itinerary.map((d, i) => ({ n: i + 1, date: date(i), title: d.title, text: d.description || d.text || '', highlights: d.highlights, meals: d.meals, stay: d.stay, travel: d.travel }))}
       included={trip.inclusions}
       excluded={trip.exclusions}
       hotels={dest?.hotels ?? []}
