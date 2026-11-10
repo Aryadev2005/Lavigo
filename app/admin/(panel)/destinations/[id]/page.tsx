@@ -1,12 +1,18 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { saveDestination } from '../../../actions'
+import { deleteDestination, saveDestination } from '../../../actions'
+import { ConfirmButton } from '@/components/admin/ConfirmButton'
+import { GalleryEditor } from '@/components/admin/GalleryEditor'
 import { ImageField } from '@/components/admin/ImageField'
 import { RowsEditor } from '@/components/admin/RowsEditor'
+import { Flash, Head } from '@/components/admin/ui'
 import { getDestinationAdmin } from '@/lib/admin-data'
 
-const num = (name: string, label: string, v?: number) => (
-  <div><label className="l">{label}</label><input className="inp" type="number" min={0} name={name} defaultValue={v ?? 0} required /></div>
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return { title: (await params).id === 'new' ? 'New destination' : 'Edit destination' }
+}
+
+const num = (name: string, label: string, v?: number, hint?: string) => (
+  <div className="fld"><label className="l" htmlFor={`d-${name}`}>{label}</label><input id={`d-${name}`} className="inp" type="number" min={0} name={name} defaultValue={v ?? 0} required />{hint && <p className="hint">{hint}</p>}</div>
 )
 
 export default async function DestinationEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ err?: string; ok?: string }> }) {
@@ -16,53 +22,77 @@ export default async function DestinationEditor({ params, searchParams }: { para
   if (!isNew && !d) notFound()
   return (
     <>
-      <p className="crumbs" style={{ padding: 0, marginBottom: 6 }}><Link href="/admin/destinations">← All destinations</Link></p>
-      <h1>{isNew ? 'New destination' : d!.name}</h1>
-      {sp.err && <div className="errbox" role="alert">{sp.err}</div>}
-      {sp.ok && <div className="okbox" role="status">{sp.ok}</div>}
-      <form action={saveDestination} className="card pane" style={{ marginTop: 14 }}>
+      <Head back={{ href: '/admin/destinations', label: 'Destinations' }} title={isNew ? 'New destination' : d!.name} sub={isNew ? undefined : d!.area} />
+      <Flash ok={sp.ok} err={sp.err} />
+      {!isNew && <nav className="ad-jump" aria-label="Sections"><a href="#basics">Basics</a><a href="#photos">Photos</a><a href="#hotels">Hotels</a><a href="#cars">Cars</a><a href="#rates">Planner rates</a><a href="#acts">Experiences</a></nav>}
+
+      <form action={saveDestination}>
         {!isNew && <input type="hidden" name="id" value={d!.id} />}
-        <div className="grid3">
-          <div><label className="l">Name</label><input className="inp" name="name" defaultValue={d?.name} required /></div>
-          <div><label className="l">Web address (optional)</label><input className="inp" name="slug" defaultValue={d?.slug} /></div>
-          <div><label className="l">Short area line</label><input className="inp" name="area" defaultValue={d?.area} placeholder="Pokhara · Kathmandu" /></div>
-        </div>
-        <label className="l">Description</label><textarea className="inp" name="blurb" defaultValue={d?.blurb} />
-        <label className="l">Cover photo</label><ImageField name="hero_image" value={d?.hero_image ?? ''} />
+        <section className="card pane" id="basics">
+          <h2 className="ad-h2">Basics</h2>
+          <div className="g3" style={{ marginTop: 12 }}>
+            <div className="fld"><label className="l" htmlFor="d-name">Name</label><input id="d-name" className="inp" name="name" defaultValue={d?.name} required /></div>
+            <div className="fld"><label className="l" htmlFor="d-area">Short area line</label><input id="d-area" className="inp" name="area" defaultValue={d?.area} placeholder="Pokhara · Kathmandu" /></div>
+            <div className="fld"><label className="l" htmlFor="d-slug">Web address (optional)</label><input id="d-slug" className="inp" name="slug" defaultValue={d?.slug} /></div>
+          </div>
+          <div className="fld"><label className="l" htmlFor="d-blurb">Description</label><textarea id="d-blurb" className="inp" name="blurb" defaultValue={d?.blurb} maxLength={400} /></div>
+          <div className="g3">
+            <div className="fld"><label className="l" htmlFor="d-places">Places in order (comma separated)</label><input id="d-places" className="inp" name="places" defaultValue={(d?.places ?? []).join(', ')} placeholder="Pokhara, Kathmandu" /><p className="hint">The planner builds its day-by-day plan from these.</p></div>
+            <div className="fld"><label className="l" htmlFor="d-nights">Suggested nights</label><input id="d-nights" className="inp" type="number" min={1} max={30} name="default_nights" defaultValue={d?.default_nights ?? 3} /></div>
+            <div className="fld"><label className="l" htmlFor="d-sort">Order on the site</label><input id="d-sort" className="inp" type="number" name="sort_order" defaultValue={d?.sort_order ?? 0} /><p className="hint">Lower numbers come first.</p></div>
+          </div>
+          <label className="chk"><input type="checkbox" name="published" defaultChecked={d ? d.published : true} /><span><b>Show on website</b><small>Untick to hide it from the home page and the planner.</small></span></label>
+        </section>
 
-        <h3 style={{ margin: '22px 0 4px' }}>Planner prices (₹)</h3>
-        <p className="muted" style={{ fontSize: 13.5 }}>Room prices are per room per night. Travel is a typical return train or flight fare per person from major cities (used only when the customer asks Lavigo to book tickets). The planner adds meals, cars, a service fee and 5% GST. Customers see only the total, never these numbers.</p>
-        <div className="grid3">{num('rate_budget', 'Room · Budget', d?.rate_budget)}{num('rate_comfort', 'Room · Comfort', d?.rate_comfort)}{num('rate_premium', 'Room · Premium', d?.rate_premium)}</div>
-        <div className="grid3">{num('travel_train', 'Train fare per person (return)', d?.travel_train)}{num('travel_flight', 'Flight fare per person (return)', d?.travel_flight)}<input type="hidden" name="travel_cab" value={d?.travel_cab ?? 0} /></div>
-        <div className="grid2">
-          <div><label className="l">Suggested nights</label><input className="inp" type="number" min={1} max={30} name="default_nights" defaultValue={d?.default_nights ?? 3} /></div>
-          <div><label className="l">Places in order (comma separated)</label><input className="inp" name="places" defaultValue={(d?.places ?? []).join(', ')} placeholder="Pokhara, Kathmandu" /></div>
-        </div>
+        <section className="card pane" id="photos">
+          <h2 className="ad-h2">Photos</h2>
+          <p className="ad-sub">The cover appears on the home page and in the planner. Gallery photos fill trip pages that have no gallery of their own, and the photo beside each itinerary day.</p>
+          <label className="l">Cover photo</label>
+          <ImageField name="hero_image" value={d?.hero_image ?? ''} />
+          <label className="l" style={{ marginTop: 18 }}>Gallery</label>
+          <GalleryEditor name="gallery_json" initial={(d?.gallery ?? []).map((g) => ({ src: g.src, caption: g.caption }))} />
+        </section>
 
-        <h3 style={{ margin: '22px 0 4px' }}>Hotels</h3>
-        <p className="muted" style={{ fontSize: 13.5, marginBottom: 8 }}>Shown on trip pages and in the planner (for the stay type the customer picks). Use the real hotel names you book.</p>
-        <RowsEditor name="hotels_json" addLabel="Add a hotel" initial={(d?.hotels ?? []).map((h) => ({ name: h.name, place: h.place, tier: h.tier, stars: String(h.stars ?? ''), note: h.note ?? '' }))}
-          fields={[{ key: 'name', label: 'Hotel name', placeholder: 'Hotel Lake View' }, { key: 'place', label: 'Town', placeholder: 'Pokhara' },
-            { key: 'tier', label: 'Stay type', type: 'select', options: [['budget', 'Budget'], ['comfort', 'Comfort'], ['premium', 'Premium']] }, { key: 'stars', label: 'Stars', type: 'number' },
-            { key: 'note', label: 'One line about it', type: 'textarea', placeholder: 'Lake-view rooms, 5 minutes to the boating point' }]} />
+        <section className="card pane" id="hotels">
+          <h2 className="ad-h2">Hotels</h2>
+          <p className="ad-sub">Listed on trip pages, in the PDF itinerary, and in the planner for the stay type the customer picks. Use the real names of the hotels you book.</p>
+          <RowsEditor name="hotels_json" addLabel="Add a hotel" itemLabel="Hotel" initial={(d?.hotels ?? []).map((h) => ({ name: h.name, place: h.place, tier: h.tier, stars: String(h.stars ?? ''), note: h.note ?? '' }))}
+            fields={[{ key: 'name', label: 'Hotel name', placeholder: 'Hotel Lake View' }, { key: 'place', label: 'Town', placeholder: 'Pokhara' },
+              { key: 'tier', label: 'Stay type', type: 'select', options: [['budget', 'Budget'], ['comfort', 'Comfort'], ['premium', 'Premium']] }, { key: 'stars', label: 'Stars', type: 'number' },
+              { key: 'note', label: 'One line about it', type: 'textarea', placeholder: 'Lake-view rooms, 5 minutes to the boating point' }]} />
+        </section>
 
-        <h3 style={{ margin: '22px 0 4px' }}>Cars</h3>
-        <p className="muted" style={{ fontSize: 13.5, marginBottom: 8 }}>Vehicles used at this destination. The planner suggests the ones that fit the group.</p>
-        <RowsEditor name="cars_json" addLabel="Add a car" initial={(d?.cars ?? []).map((c) => ({ name: c.name, kind: c.kind, seats: String(c.seats ?? ''), note: c.note ?? '' }))}
-          fields={[{ key: 'name', label: 'Car', placeholder: 'Toyota Innova Crysta' }, { key: 'kind', label: 'Type', placeholder: 'SUV' }, { key: 'seats', label: 'Seats', type: 'number' },
-            { key: 'note', label: 'Used for', type: 'textarea', placeholder: 'Airport pick-up and sightseeing' }]} />
+        <section className="card pane" id="cars">
+          <h2 className="ad-h2">Cars</h2>
+          <p className="ad-sub">Vehicles used here. The planner suggests the ones that fit the group size.</p>
+          <RowsEditor name="cars_json" addLabel="Add a car" itemLabel="Car" initial={(d?.cars ?? []).map((c) => ({ name: c.name, kind: c.kind, seats: String(c.seats ?? ''), note: c.note ?? '' }))}
+            fields={[{ key: 'name', label: 'Car', placeholder: 'Toyota Innova Crysta' }, { key: 'kind', label: 'Type', placeholder: 'SUV' }, { key: 'seats', label: 'Seats', type: 'number' },
+              { key: 'note', label: 'Used for', type: 'textarea', placeholder: 'Airport pick-up and sightseeing' }]} />
+        </section>
 
-        <h3 style={{ margin: '22px 0 8px' }}>Experiences customers can add</h3>
-        <RowsEditor name="activities_json" addLabel="Add an experience" initial={(d?.activities ?? []).map((a) => ({ n: a.n, p: String(a.p), where: a.where }))}
-          fields={[{ key: 'n', label: 'Name', placeholder: 'Phewa Lake boating' }, { key: 'p', label: 'Price per person (₹, 0 = free)', type: 'number' }, { key: 'where', label: 'Where', placeholder: 'Pokhara' }]} />
+        <section className="card pane" id="rates">
+          <h2 className="ad-h2">Planner rates (private)</h2>
+          <p className="ad-sub">Used to estimate custom trips. Customers see only the total, never these numbers. The planner adds meals, cars, a service fee and 5% GST.</p>
+          <div className="g3">{num('rate_budget', 'Room per night · Budget (₹)', d?.rate_budget)}{num('rate_comfort', 'Room per night · Comfort (₹)', d?.rate_comfort)}{num('rate_premium', 'Room per night · Premium (₹)', d?.rate_premium)}</div>
+          <div className="g3">{num('travel_train', 'Train fare per person, return (₹)', d?.travel_train, 'Only used when Lavigo books the tickets.')}{num('travel_flight', 'Flight fare per person, return (₹)', d?.travel_flight)}<input type="hidden" name="travel_cab" value={d?.travel_cab ?? 0} /></div>
+        </section>
 
-        <h3 style={{ margin: '22px 0 8px' }}>Photo gallery</h3>
-        <RowsEditor name="gallery_json" addLabel="Add a photo" initial={(d?.gallery ?? []).map((g) => ({ src: g.src, caption: g.caption }))}
-          fields={[{ key: 'src', label: 'Photo', type: 'image' }, { key: 'caption', label: 'Caption', placeholder: 'Swayambhunath at dusk' }]} />
+        <section className="card pane" id="acts">
+          <h2 className="ad-h2">Experiences customers can add</h2>
+          <p className="ad-sub">Shown as tick-boxes in the planner. The price is per person and stays private.</p>
+          <RowsEditor name="activities_json" addLabel="Add an experience" itemLabel="Experience" initial={(d?.activities ?? []).map((a) => ({ n: a.n, p: String(a.p), where: a.where }))}
+            fields={[{ key: 'n', label: 'Name', placeholder: 'Paragliding' }, { key: 'p', label: 'Price per person (₹)', type: 'number' }, { key: 'where', label: 'Where', placeholder: 'Pokhara' }]} />
+        </section>
 
-        <label className="act" style={{ marginTop: 16, display: 'flex' }}><input type="checkbox" name="published" defaultChecked={d ? d.published : true} /><span className="x"><b>Show on website</b><small>Controls the planner, the home page and the gallery.</small></span></label>
-        <button className="btn b-main" style={{ marginTop: 14 }}>{isNew ? 'Create destination' : 'Save destination'}</button>
+        <div className="ad-savebar"><span>Changes go live on the website and planner within a minute.</span><button className="btn b-main lg">{isNew ? 'Create destination' : 'Save destination'}</button></div>
       </form>
+
+      {!isNew && (
+        <form action={deleteDestination} style={{ marginTop: 24 }}>
+          <input type="hidden" name="id" value={d!.id} />
+          <ConfirmButton className="btn b-danger sm" message={`Delete ${d!.name}? This cannot be undone. Destinations used by a trip cannot be deleted.`}>Delete destination</ConfirmButton>
+        </form>
+      )}
     </>
   )
 }

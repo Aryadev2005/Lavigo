@@ -5,6 +5,7 @@ import { FooterGate } from '@/components/FooterGate'
 import { Header } from '@/components/Header'
 import { JsonLd } from '@/components/JsonLd'
 import { BUSINESS, SITE_URL } from '@/lib/config'
+import { getSite } from '@/lib/site'
 import './globals.css'
 import './mmt.css'
 import './lavigo.css'
@@ -52,13 +53,15 @@ const agency = {
   priceRange: '₹₹',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { home, business } = await getSite()
+  const ld = { ...agency, sameAs: [business.instagram], ...(business.email ? { email: business.email } : {}), ...(business.gstin ? { taxID: business.gstin } : {}) }
   return (
     <html lang="en-IN" className={`${outfit.variable} ${italiana.variable} ${fraunces.variable}`}>
       <body>
         <a className="skip" href="#main">Skip to content</a>
-        <JsonLd data={agency} />
-        <Header />
+        <JsonLd data={ld} />
+        <Header topbar={home.topbar} instagram={business.instagram} />
         <main id="main">{children}</main>
         <FooterGate><Footer /></FooterGate>
       </body>

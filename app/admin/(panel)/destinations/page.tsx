@@ -1,30 +1,48 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { listDestinationsAdmin } from '@/lib/admin-data'
-import { inr } from '@/lib/format'
+import { ClickRow } from '@/components/admin/ClickRow'
+import { Icon } from '@/components/Icons'
+import { Flash, Head, money } from '@/components/admin/ui'
+import { listDestinationsAdmin, listTripsAdmin } from '@/lib/admin-data'
+import { withStays } from '@/lib/stays'
+
+export const metadata = { title: 'Destinations' }
 
 export default async function Destinations({ searchParams }: { searchParams: Promise<{ err?: string; ok?: string }> }) {
-  const sp = await searchParams
-  const dests = await listDestinationsAdmin()
+  const [sp, dests, trips] = await Promise.all([searchParams, listDestinationsAdmin(), listTripsAdmin()])
   return (
     <>
-      <div className="between" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
-        <div><h1>Planner rates</h1><p className="muted">Prices and photos behind the &quot;Plan my trip&quot; page, per destination.</p></div>
-        <Link className="btn b-main" href="/admin/destinations/new">+ New destination</Link>
+      <Head title="Destinations" sub="Places, photos, hotels, cars and the private rates behind the trip planner. Customers only ever see totals.">
+        <Link className="btn b-main" href="/admin/destinations/new"><Icon name="plus" size={16} />New destination</Link>
+      </Head>
+      <Flash ok={sp.ok} err={sp.err} />
+      <div className="card ad-scroll">
+        <table className="ad-tbl">
+          <thead><tr><th>Destination</th><th>Trips</th><th>Photos</th><th>Hotels · cars</th><th>Room per night</th><th>On website</th></tr></thead>
+          <tbody>{dests.map((raw) => {
+            const d = withStays(raw)
+            const own = (raw.hotels?.length ?? 0) > 0
+            const n = trips.filter((t) => t.destination_id === d.id).length
+            return (
+              <ClickRow key={d.id} href={`/admin/destinations/${d.id}`}>
+                <td>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div style={{ width: 64, height: 46, borderRadius: 9, overflow: 'hidden', background: 'var(--lav2)', position: 'relative', flex: 'none' }}>
+                      {d.hero_image && <Image src={d.hero_image} alt="" fill sizes="64px" style={{ objectFit: 'cover' }} />}
+                    </div>
+                    <div><Link href={`/admin/destinations/${d.id}`}><b>{d.name}</b></Link><small>{d.area}</small></div>
+                  </div>
+                </td>
+                <td>{n || <span className="muted">—</span>}</td>
+                <td>{d.gallery.length}</td>
+                <td>{d.hotels.length} · {d.cars.length}{!own && d.hotels.length > 0 ? <small style={{ color: 'var(--warn)' }}>starter list — add real hotels</small> : null}</td>
+                <td>{money(d.rate_budget)} · {money(d.rate_comfort)} · {money(d.rate_premium)}<small>budget · comfort · premium</small></td>
+                <td><span className={'pill ' + (d.published ? 'live' : 'hidden')}>{d.published ? 'Live' : 'Hidden'}</span></td>
+              </ClickRow>
+            )
+          })}</tbody>
+        </table>
       </div>
-      {sp.err && <div className="errbox" role="alert">{sp.err}</div>}
-      {sp.ok && <div className="okbox" role="status">{sp.ok}</div>}
-      <div className="card tbl-scroll"><table>
-        <thead><tr><th>Destination</th><th>Room / night (budget · comfort · premium)</th><th>Fares (train · cab · flight)</th><th>Shown</th><th></th></tr></thead>
-        <tbody>{dests.map((d) => (
-          <tr key={d.id}>
-            <td><b>{d.name}</b><div className="muted" style={{ fontSize: 12 }}>{d.area}</div></td>
-            <td>{inr(d.rate_budget)} · {inr(d.rate_comfort)} · {inr(d.rate_premium)}</td>
-            <td>{inr(d.travel_train)} · {inr(d.travel_cab)} · {inr(d.travel_flight)}</td>
-            <td><span className={'pill ' + (d.published ? 'open' : 'closed')}>{d.published ? 'Yes' : 'Hidden'}</span></td>
-            <td><Link className="btn b-ghost sm" href={`/admin/destinations/${d.id}`}>Edit</Link></td>
-          </tr>))}
-        </tbody>
-      </table></div>
     </>
   )
 }

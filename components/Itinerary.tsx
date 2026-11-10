@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { BUSINESS, SITE_URL } from '@/lib/config'
+import { getSite } from '@/lib/site'
 import { TIER_LABEL, stars } from '@/lib/stays'
 import type { Car, Hotel } from '@/lib/types'
 import { PrintBar } from './PrintBar'
@@ -23,7 +24,8 @@ type Props = {
 }
 
 /** A clean A4 itinerary. "Download PDF" opens the browser's save-as-PDF dialog. */
-export function ItineraryDoc(p: Props) {
+export async function ItineraryDoc(p: Props) {
+  const { business: biz } = await getSite()
   const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
   return (
     <div className="it-wrap">
@@ -96,7 +98,7 @@ export function ItineraryDoc(p: Props) {
         </section>
 
         <footer className="it-foot">
-          <span>{BUSINESS.address}</span>
+          <span>{biz.address}{biz.gstin ? ` · GSTIN ${biz.gstin}` : ''}</span>
           <span>Prepared on {today}. Plans can change with weather and road conditions.</span>
         </footer>
       </article>

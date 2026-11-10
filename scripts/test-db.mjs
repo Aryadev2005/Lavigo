@@ -126,5 +126,70 @@ ok('v2 rejects an empty list', await throws(`select * from create_hold_v2($1,'96
 ok('v2 rejects a bad ticket choice', await throws(`select * from create_hold_v2($1,'9600000002',null,$2::jsonb,'bus',null)`, [dep3.id, pax], 'bad_ticket_by'))
 ok('v2 keeps the overselling guard', await throws(`select * from create_hold_v2($1,'9600000003',null,$2::jsonb,'self',null)`, [dep3.id, JSON.stringify(Array.from({length: 9}, (_, i) => ({ name: 'Person ' + i, gender: i % 2 ? 'male' : 'female' })))], 'not_enough_seats:8'))
 
+console.log('\nMigration 006: admin console')
+await db.exec('reset role')
+await db.exec(fs.readFileSync('supabase/migrations/006_admin_console.sql','utf8'))
+await db.exec('reset role')
+await db.exec(fs.readFileSync('supabase/migrations/006_admin_console.sql','utf8')) // safe to run twice
+await db.exec(`grant execute on all functions in schema public to service_role; grant all on all tables in schema public to service_role;`)
+await db.exec('set role anon')
+ok('anon can read site_settings', !(await throws(`select * from site_settings`)))
+ok('anon cannot read payments', await throws(`select * from payments`, [], 'permission denied'))
+ok('anon cannot write site_settings', await throws(`insert into site_settings(key, value) values ('x','{}')`))
+ok('anon cannot call admin_create_booking', await throws(`select * from admin_create_booking('00000000-0000-0000-0000-000000000000','9876543210',null,'[]'::jsonb,'self',null,null)`, [], 'permission denied'))
+await db.exec('reset role')
+await db.exec('set role service_role')
+const [dep6] = await q(`insert into departures(trip_id, depart_date, price, seats_total, start_city) values ($1, current_date + 40, 10000, 6, 'Patna') returning id`, [trip.id])
+const P_6 = (n, g = 'female') => JSON.stringify(Array.from({ length: n }, (_, i) => ({ name: 'Guest ' + (i + 1), gender: i % 2 ? 'male' : g })))
+// owner booking, no per-phone limits: same phone books three times
+const a1_6 = (await q(`select * from admin_create_booking($1,'9811111111',null,$2::jsonb,'self',null,'Phone booking')`, [dep6.id, P_6(1)]))[0]
+const a2_6 = (await q(`select * from admin_create_booking($1,'9811111111',null,$2::jsonb,'self',null,null)`, [dep6.id, P_6(1)]))[0]
+const a3_6 = (await q(`select * from admin_create_booking($1,'9811111111',null,$2::jsonb,'agency','Gaya',null, true, 3000, 'cash', 9000)`, [dep6.id, P_6(2)]))[0]
+ok('owner booking marked source=admin and held', a1_6.source === 'admin' && a1_6.status === 'held' && a1_6.admin_note === 'Phone booking')
+ok('owner bookings skip the 2-holds-per-phone limit', a2_6.status === 'held')
+ok('owner can confirm at once with a negotiated price', a3_6.status === 'confirmed' && a3_6.amount_total === 18000 && a3_6.amount_paid === 3000 && a3_6.payment_status === 'partial', JSON.stringify(a3_6))
+ok('payment log written for the amount received', (await q(`select amount, method from payments where booking_id=$1`, [a3_6.id]))[0]?.method === 'cash')
+ok('owner booking still cannot oversell (2 left)', await throws(`select * from admin_create_booking($1,'9822222222',null,$2::jsonb,'self',null,null)`, [dep6.id, P_6(3)], 'not_enough_seats:2'))
+ok('owner booking checks genders', await throws(`select * from admin_create_booking($1,'9822222222',null,'[{"name":"No G"}]'::jsonb,'self',null,null)`, [dep6.id], 'bad_gender'))
+
+const c1_6 = (await q(`select * from admin_confirm($1, 2500, 'upi', 'GPay ref 123')`, [a1_6.id]))[0]
+ok('admin_confirm confirms and logs the advance', c1_6.status === 'confirmed' && c1_6.amount_paid === 2500 && c1_6.payment_status === 'partial')
+ok('admin_confirm refuses a second confirm', await throws(`select * from admin_confirm($1, 100)`, [a1_6.id], 'already_confirmed'))
+const p1_6 = (await q(`select * from add_payment($1, 7500, 'bank', 'Balance')`, [a1_6.id]))[0]
+ok('add_payment completes the balance', p1_6.amount_paid === 10000 && p1_6.payment_status === 'paid')
+ok('add_payment blocks paying more than the total', await throws(`select * from add_payment($1, 1)`, [a1_6.id], 'overpaid:0'))
+ok('add_payment refuses a held booking', await throws(`select * from add_payment($1, 100)`, [a2_6.id], 'not_confirmed'))
+ok('payment history has 2 lines', (await q(`select count(*)::int n from payments where booking_id=$1`, [a1_6.id]))[0].n === 2)
+
+// edit: rename + genders + add a traveller (1 -> 2): 1 seat left after a1_6,a2_6,a3_6 (6-1-1-2=2)
+const e1_6 = (await q(`select * from update_booking($1,'9811111111','a@b.in',$2::jsonb,'agency','Ranchi','VIP')`, [a2_6.id, JSON.stringify([{ name: 'Meera Das', gender: 'female' }, { name: 'Arun Das', gender: 'male' }])]))[0]
+ok('update_booking adds a traveller and reprices at the same rate', e1_6.travellers === 2 && e1_6.amount_total === 20000 && e1_6.amount_advance === 5000 && e1_6.name === 'Meera Das')
+ok('update_booking keeps other_names in sync', e1_6.other_names === 'Arun Das (Male)')
+ok('update_booking refuses more travellers than seats', await throws(`select * from update_booking($1,'9811111111',null,$2::jsonb,'self',null,null)`, [a2_6.id, P_6(4)], 'not_enough_seats:'))
+const e2_6 = (await q(`select * from update_booking($1,'9811111111',null,$2::jsonb,'self',null,null, 17000)`, [a2_6.id, JSON.stringify([{ name: 'Meera Das', gender: 'female' }, { name: 'Arun Das', gender: 'male' }])]))[0]
+ok('update_booking applies a discount to the total', e2_6.amount_total === 17000 && e2_6.amount_advance === 4250)
+ok('discount cannot go below what was paid', await throws(`select * from update_booking($1,'9811111111',null,$2::jsonb,'self',null,null, 2000)`, [a3_6.id, P_6(2)], 'total_below_paid:3000'))
+const e3_6 = (await q(`select * from update_booking($1,'9811111111',null,$2::jsonb,'self',null,null, 12000)`, [a3_6.id, P_6(2)]))[0]
+ok('discount on a confirmed booking updates payment status', e3_6.amount_total === 12000 && e3_6.payment_status === 'partial')
+
+// extend hold, including a lapsed one
+await q(`update bookings set hold_expires_at = now() - interval '1 hour', status='expired' where id=$1`, [a2_6.id])
+const x1_6 = (await q(`select * from extend_hold($1, 48)`, [a2_6.id]))[0]
+ok('extend_hold revives a lapsed hold for 48h', x1_6.status === 'held' && (new Date(x1_6.hold_expires_at) - Date.now()) > 47.5 * 3600e3)
+ok('extend_hold refuses confirmed bookings', await throws(`select * from extend_hold($1, 24)`, [a1_6.id], 'not_held'))
+
+// move to another date
+const [dep7] = await q(`insert into departures(trip_id, depart_date, price, seats_total) values ($1, current_date + 70, 10000, 1) returning id`, [trip.id])
+ok('move_booking refuses when the new date lacks seats', await throws(`select * from move_booking($1,$2)`, [a2_6.id, dep7.id], 'not_enough_seats:1'))
+const m1_6 = (await q(`select * from move_booking($1,$2)`, [a1_6.id, dep7.id]))[0]
+ok('move_booking moves a 1-traveller booking', m1_6.departure_id === dep7.id)
+
+// refunds on cancel
+await q(`select * from cancel_booking($1)`, [a1_6.id])
+const r1_6 = (await q(`select * from add_payment($1, -10000, 'bank', 'Full refund')`, [a1_6.id]))[0]
+ok('refund on a cancelled booking marks it refunded', r1_6.amount_paid === 0 && r1_6.payment_status === 'refunded')
+ok('no new money on a cancelled booking', await throws(`select * from add_payment($1, 500)`, [a1_6.id], 'not_confirmed'))
+ok('refund cannot exceed what was paid', await throws(`select * from add_payment($1, -1)`, [a1_6.id], 'refund_too_large'))
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

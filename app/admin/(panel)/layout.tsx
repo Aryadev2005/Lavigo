@@ -1,24 +1,33 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import Image from 'next/image'
 import { signOut } from '../actions'
+import { AdminNav } from '@/components/admin/AdminNav'
+import { Icon } from '@/components/Icons'
 import { requireAdmin } from '@/lib/admin-auth'
+import { adminClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Admin', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: { default: 'Admin', template: '%s · Lavigo admin' }, robots: { index: false, follow: false } }
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  await requireAdmin()
+  const user = await requireAdmin()
+  const { count } = await adminClient().from('bookings').select('id', { count: 'exact', head: true })
+    .eq('status', 'held').gt('hold_expires_at', new Date().toISOString())
   return (
-    <>
-      <div className="adm-bar"><div className="wrap">
-        <b>Lavigo admin</b>
-        <Link href="/admin">Bookings</Link>
-        <Link href="/admin/trips">Trips &amp; dates</Link>
-        <Link href="/admin/destinations">Planner rates</Link>
-        <Link href="/" target="_blank">View site ↗</Link>
-        <form action={signOut} style={{ marginLeft: 'auto' }}><button className="btn b-ghost sm">Sign out</button></form>
-      </div></div>
-      <div className="wrap adm">{children}</div>
-    </>
+    <div className="ad">
+      <aside className="ad-side">
+        <div className="ad-brand">
+          <Image src="/img/logo-white.webp" alt="Lavigo" width={288} height={105} style={{ height: 26, width: 'auto' }} priority />
+          <small>ADMIN</small>
+        </div>
+        <AdminNav holds={count ?? 0} />
+        <div className="ad-me">
+          <span>Signed in as</span>
+          <b title={user.email}>{user.email}</b>
+          <form action={signOut}><button type="submit"><Icon name="logout" size={16} />Sign out</button></form>
+        </div>
+      </aside>
+      <div className="ad-main">{children}</div>
+    </div>
   )
 }

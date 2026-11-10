@@ -1,84 +1,103 @@
 import Link from 'next/link'
-import { confirmBooking, cancelBooking, recordPayment } from '../actions'
-import { ConfirmButton } from '@/components/admin/ConfirmButton'
-import { bookingStats, listBookings } from '@/lib/admin-data'
-import { fmtDate, fmtDateTime, inr } from '@/lib/format'
+import { Icon } from '@/components/Icons'
+import { Flash, GenderBar, Head, SeatMeter, Stat, StatusPill, dDay, dShort, money, rel } from '@/components/admin/ui'
+import { listDepartures, overview, travellersOf } from '@/lib/admin-data'
+import { daysTo } from '@/lib/format'
 
-const FILTERS = [['active', 'Active'], ['held', 'Awaiting payment'], ['confirmed', 'Confirmed'], ['expired', 'Expired'], ['cancelled', 'Cancelled'], ['all', 'All']] as const
+export const metadata = { title: 'Overview' }
 
-export default async function Bookings({ searchParams }: { searchParams: Promise<{ status?: string; err?: string; ok?: string }> }) {
-  const sp = await searchParams
-  const filter = FILTERS.some(([k]) => k === sp.status) ? sp.status! : 'active'
-  const [rows, st] = await Promise.all([listBookings(filter), bookingStats()])
-  const now = Date.now()
+export default async function Overview({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
+  const [sp, o, deps] = await Promise.all([searchParams, overview(), listDepartures('upcoming')])
+  const next = deps.slice(0, 6)
+  const hour = Number(new Date().toLocaleString('en-IN', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kolkata' }))
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const attention = o.expiringSoon.length + o.balanceSoon.length
 
   return (
     <>
-      <h1>Bookings</h1>
-      <p className="muted" style={{ marginBottom: 14 }}>Customers hold seats on the website. When they pay on WhatsApp, tap <b>Confirm</b> and enter the amount received.</p>
-      {sp.err && <div className="errbox" role="alert">{sp.err}</div>}
-      {sp.ok && <div className="okbox" role="status">{sp.ok}</div>}
+      <Head title={greet} sub={o.newToday ? `${o.newToday} new booking${o.newToday > 1 ? 's' : ''} today. ${attention ? `${attention} thing${attention > 1 ? 's' : ''} need${attention > 1 ? '' : 's'} your attention.` : 'Nothing urgent.'}` : attention ? `${attention} thing${attention > 1 ? 's' : ''} need${attention > 1 ? '' : 's'} your attention.` : 'Everything is up to date.'}>
+        <Link href="/admin/bookings/new" className="btn b-main"><Icon name="plus" size={16} />New booking</Link>
+        <Link href="/admin/departures?new=1" className="btn b-ghost"><Icon name="calendar" size={16} />Add a departure</Link>
+      </Head>
+      <Flash ok={sp.ok} err={sp.err} />
 
-      <div className="stats" style={{ marginBottom: 18 }}>
-        <div className="card stat"><small>Awaiting payment</small><b>{st.waiting}</b><em style={{ color: 'var(--warn)' }}>{st.waitingSeats} seats on hold</em></div>
-        <div className="card stat"><small>Confirmed bookings</small><b>{st.confirmed}</b><em>{st.seatsSold} seats on upcoming trips</em></div>
-        <div className="card stat"><small>Money received</small><b>{inr(st.received)}</b><em>all confirmed bookings</em></div>
-        <div className="card stat"><small>Balance still due</small><b>{inr(st.balanceDue)}</b><em style={{ color: 'var(--muted)' }}>from confirmed bookings</em></div>
+      <div className="ad-stats">
+        <Stat icon="clock" label="Waiting for payment" value={o.holds} note={o.holds ? `${o.heldSeats} seats held · ${money(o.heldValue)} in advances` : 'No seats on hold'} hot={o.holds > 0} />
+        <Stat icon="group" label="Travellers confirmed" value={o.upcomingTravellers} note="on upcoming departures" />
+        <Stat icon="wallet" label="Money received" value={money(o.received)} note={`${money(o.receivedThisMonth)} this month`} />
+        <Stat icon="receipt" label="Balance to collect" value={money(o.due)} note="from upcoming trips" />
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-        {FILTERS.map(([k, l]) => <Link key={k} href={`/admin?status=${k}`} className={'btn sm ' + (k === filter ? 'b-main' : 'b-ghost')}>{l}</Link>)}
+      <div className="ad-2col">
+        <div className="card">
+          <div className="ad-cardh"><h2>Needs attention</h2><Link href="/admin/bookings?status=held">All holds →</Link></div>
+          {attention === 0 ? (
+            <div className="ad-empty"><b>All clear</b>No holds about to lapse and no balances due in the next 14 days.</div>
+          ) : (
+            <ul className="ad-list">
+              {o.expiringSoon.map((b) => (
+                <li key={b.id}><Link href={`/admin/bookings/${b.code}`}>
+                  <span className="ad-ic warn"><Icon name="clock" size={18} /></span>
+                  <span className="x"><b>{b.name}</b> · <span className="ad-code">{b.code}</span><small>Hold lapses {rel(b.hold_expires_at!)} · {b.departure.trip.title}, {dShort(b.departure.depart_date)}</small></span>
+                  <span className="r"><b>{money(b.amount_advance)}</b><small>advance due</small></span>
+                </Link></li>
+              ))}
+              {o.balanceSoon.map((b) => (
+                <li key={b.id}><Link href={`/admin/bookings/${b.code}`}>
+                  <span className="ad-ic bad"><Icon name="wallet" size={18} /></span>
+                  <span className="x"><b>{b.name}</b> · <span className="ad-code">{b.code}</span><small>Travels {daysTo(b.departure.depart_date) <= 0 ? 'today' : `in ${daysTo(b.departure.depart_date)} days`} · {b.departure.trip.title}</small></span>
+                  <span className="r"><b>{money(b.amount_total - b.amount_paid)}</b><small>balance due</small></span>
+                </Link></li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="ad-cardh"><h2>Latest bookings</h2><Link href="/admin/bookings?status=all">All bookings →</Link></div>
+          {o.recent.length === 0 ? <div className="ad-empty"><b>No bookings yet</b>They appear here as soon as someone reserves on the website.</div> : (
+            <ul className="ad-list">
+              {o.recent.map((b) => {
+                const t = travellersOf(b)
+                return (
+                  <li key={b.id}><Link href={`/admin/bookings/${b.code}`}>
+                    <span className="ad-ic"><Icon name="ticket" size={18} /></span>
+                    <span className="x"><b>{b.name}</b>{t.length > 1 ? <span className="muted"> +{t.length - 1}</span> : null} · <span className="ad-code">{b.code}</span><small>{b.departure.trip.title} · {dShort(b.departure.depart_date)} · {rel(b.created_at)}</small></span>
+                    <span className="r"><StatusPill b={b} /><small style={{ marginTop: 3 }}>{money(b.amount_total)}</small></span>
+                  </Link></li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
       </div>
 
-      <div className="card tbl-scroll">
-        <table>
-          <thead><tr><th>Booking</th><th>Customer</th><th>Trip</th><th>Travellers</th><th>Money</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            {rows.length === 0 && <tr><td colSpan={7} className="muted" style={{ padding: 24, textAlign: 'center' }}>No bookings here yet.</td></tr>}
-            {rows.map((b) => {
-              const lapsed = b.status === 'held' && b.hold_expires_at && new Date(b.hold_expires_at).getTime() < now
-              const st2 = lapsed ? 'expired' : b.status
-              const bal = Math.max(0, b.amount_total - b.amount_paid)
-              return (
-                <tr key={b.id}>
-                  <td><b>{b.code}</b><div className="muted" style={{ fontSize: 12 }}>{fmtDateTime(b.created_at)}</div></td>
-                  <td>{b.name}<div><a href={`https://wa.me/91${b.phone}?text=${encodeURIComponent(`Hi ${b.name.split(' ')[0]}, this is Lavigo about your booking ${b.code}.`)}`} target="_blank" rel="noopener" style={{ color: 'var(--ok)', fontWeight: 600 }}>{b.phone} ↗</a></div></td>
-                  <td>{b.departure.trip.title}<div className="muted" style={{ fontSize: 12 }}>{fmtDate(b.departure.depart_date, { day: 'numeric', month: 'short', year: 'numeric' })}</div></td>
-                  <td style={{ minWidth: 200 }}>
-                    <b>{b.travellers}</b>
-                    {b.passengers && b.passengers.length > 0 ? (
-                      <ul className="paxlist">{b.passengers.map((p, i) => <li key={i}>{p.name} <span className={'gx ' + p.gender}>{p.gender === 'male' ? 'M' : 'F'}</span></li>)}</ul>
-                    ) : b.other_names ? <div className="muted" style={{ fontSize: 12 }}>{b.other_names}</div> : null}
-                    {b.passengers && b.passengers.length > 0 && (
-                      <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{b.ticket_by === 'self' ? 'Booking own tickets' : `Lavigo books tickets${b.from_city ? ` from ${b.from_city}` : ''}`}</div>
-                    )}
-                  </td>
-                  <td>{inr(b.amount_total)}<div className="muted" style={{ fontSize: 12 }}>advance {inr(b.amount_advance)}{b.amount_paid > 0 && <> · paid {inr(b.amount_paid)}</>}</div></td>
-                  <td><span className={'pill ' + st2}>{st2 === 'held' ? 'awaiting payment' : st2}</span>{st2 === 'held' && b.hold_expires_at && <div className="muted" style={{ fontSize: 12 }}>until {fmtDateTime(b.hold_expires_at)}</div>}</td>
-                  <td style={{ minWidth: 230 }}>
-                    {(b.status === 'held' || b.status === 'expired') && (
-                      <form action={confirmBooking} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                        <input type="hidden" name="id" value={b.id} />
-                        <input className="inp sm" name="amount" type="number" min={0} defaultValue={b.amount_advance} aria-label="Amount received (₹)" style={{ width: 96 }} />
-                        <button className="btn b-main sm">Confirm</button>
-                      </form>
-                    )}
-                    {b.status === 'confirmed' && bal > 0 && (
-                      <form action={recordPayment} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                        <input type="hidden" name="id" value={b.id} />
-                        <input className="inp sm" name="amount" type="number" min={1} max={bal} defaultValue={bal} aria-label="Payment received (₹)" style={{ width: 96 }} />
-                        <button className="btn b-ghost sm">Add payment</button>
-                      </form>
-                    )}
-                    {b.status !== 'cancelled' && (
-                      <form action={cancelBooking}><input type="hidden" name="id" value={b.id} /><ConfirmButton className="btn b-danger sm" message={`Cancel booking ${b.code} and release its ${b.travellers} seat(s)?`}>Cancel booking</ConfirmButton></form>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      <div className="ad-sec">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <div><h2 className="ad-h2">Next departures</h2><p className="ad-sub" style={{ margin: 0 }}>How full each batch is, and who is travelling.</p></div>
+          <Link href="/admin/departures" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink3)' }}>All departures →</Link>
+        </div>
+        {next.length === 0 ? (
+          <div className="card ad-empty"><b>No upcoming departures</b><Link href="/admin/departures?new=1" className="btn b-main" style={{ marginTop: 12 }}>Add a departure</Link></div>
+        ) : (
+          <div className="ad-deps">
+            {next.map((d) => (
+              <Link key={d.id} href={`/admin/departures/${d.id}`} className="card ad-dep">
+                <div className="ad-dep-top">
+                  <div className="ad-dep-date">{dDay(d.depart_date).split(',')[0]} {new Date(d.depart_date + 'T12:00:00+05:30').getDate()}<small>{dShort(d.depart_date)} · {daysTo(d.depart_date) <= 0 ? 'today' : `in ${daysTo(d.depart_date)} days`}</small></div>
+                  <span className={'pill ' + (d.status === 'closed' ? 'closed' : d.stats.seatsLeft === 0 ? 'confirmed' : 'open')}>{d.status === 'closed' ? 'Closed' : d.stats.seatsLeft === 0 ? 'Full' : 'Open'}</span>
+                </div>
+                <h3>{d.trip.title}</h3>
+                <p>From {d.start_city} · {d.trip.nights}N · {money(d.price)} per person</p>
+                <SeatMeter total={d.seats_total} confirmed={d.stats.confirmedSeats} held={d.stats.heldSeats} />
+                <div className="ad-dep-foot">
+                  <GenderBar g={d.stats.genders} />
+                  <span style={{ fontSize: 12.5, fontWeight: 600 }}>{money(d.stats.received)}<span className="muted" style={{ fontWeight: 400 }}> in</span></span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </>
   )

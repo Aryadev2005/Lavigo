@@ -1,17 +1,29 @@
 'use client'
 import { useRef, useState } from 'react'
 import { uploadImage } from '@/app/admin/actions'
+import { Icon } from '@/components/Icons'
 
 // Shrinks big phone photos in the browser before upload (keeps uploads small and fast).
-async function downscale(file: File, max = 1600): Promise<Blob> {
+export async function downscale(file: File, max = 1800): Promise<Blob> {
   const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' })
   const k = Math.min(1, max / Math.max(bmp.width, bmp.height))
   const c = document.createElement('canvas')
   c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k)
   c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
-  return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('resize failed'))), 'image/jpeg', 0.82))
+  return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('resize failed'))), 'image/jpeg', 0.84))
+}
+export async function sendPhoto(f: File): Promise<{ url?: string; error?: string }> {
+  try {
+    const blob = await downscale(f)
+    const fd = new FormData()
+    fd.set('file', new File([blob], 'photo.jpg', { type: 'image/jpeg' }))
+    return await uploadImage(fd)
+  } catch {
+    return { error: `Could not read "${f.name}". Use a JPG, PNG or WebP photo.` }
+  }
 }
 
+/** One photo: preview + upload/replace/remove. Posts its URL under `name`. */
 export function ImageField({ value, onChange, name }: { value: string; onChange?: (v: string) => void; name?: string }) {
   const [val, setVal] = useState(value)
   const [busy, setBusy] = useState(false)
@@ -22,22 +34,17 @@ export function ImageField({ value, onChange, name }: { value: string; onChange?
   async function pick(f: File | undefined) {
     if (!f) return
     setBusy(true); setErr('')
-    try {
-      const blob = await downscale(f)
-      const fd = new FormData()
-      fd.set('file', new File([blob], 'photo.jpg', { type: 'image/jpeg' }))
-      const r = await uploadImage(fd)
-      if (r.error) setErr(r.error); else if (r.url) set(r.url)
-    } catch { setErr('Could not read that photo. Try a JPG or PNG.') }
+    const r = await sendPhoto(f)
+    if (r.error) setErr(r.error); else if (r.url) set(r.url)
     setBusy(false)
     if (input.current) input.current.value = ''
   }
 
   return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="ad-img1">
       {name && <input type="hidden" name={name} value={val} />}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {val ? <img src={val} alt="" style={{ width: 84, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} /> : <div style={{ width: 84, height: 60, borderRadius: 8, background: 'var(--lav2)', display: 'grid', placeItems: 'center', fontSize: 12, color: 'var(--muted)' }}>No photo</div>}
+      {val ? <img src={val} alt="" /> : <div className="ph"><Icon name="image" size={22} /></div>}
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pick(e.target.files?.[0])} />
       <button type="button" className="btn b-ghost sm" disabled={busy} onClick={() => input.current?.click()}>{busy ? 'Uploading…' : val ? 'Change photo' : 'Upload photo'}</button>
       {val && !busy && <button type="button" className="btn b-ghost sm" onClick={() => set('')}>Remove</button>}

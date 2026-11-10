@@ -1,9 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { BUSINESS } from '@/lib/config'
+import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
 
-export function Footer() {
+export async function Footer() {
+  const { business: b } = await getSite()
   return (
     <footer className="m-foot">
       <div className="m-wrap">
@@ -11,7 +13,8 @@ export function Footer() {
           <div>
             <Image src="/img/logo-white.webp" alt="Lavigo" width={288} height={105} style={{ height: 30, width: 'auto', marginBottom: 12 }} />
             <p>{BUSINESS.tagline}</p>
-            <p style={{ marginTop: 10 }}>{BUSINESS.address}</p>
+            <p style={{ marginTop: 10 }}>{b.address}</p>
+            {b.gstin && <p style={{ marginTop: 6 }}>GSTIN {b.gstin}</p>}
           </div>
           <div>
             <h4>Trips</h4>
@@ -31,7 +34,8 @@ export function Footer() {
             <h4>Contact</h4>
             <a href={`tel:${BUSINESS.phoneE164}`}>{BUSINESS.phoneDisplay}</a>
             <a href={waLink()} target="_blank" rel="noopener">WhatsApp</a>
-            <a href={BUSINESS.instagram} target="_blank" rel="noopener">Instagram @lavigo.in</a>
+            {b.email && <a href={`mailto:${b.email}`}>{b.email}</a>}
+            <a href={b.instagram} target="_blank" rel="noopener">Instagram</a>
           </div>
         </div>
         <div className="m-foot-b">© {new Date().getFullYear()} {BUSINESS.name}, {BUSINESS.city}</div>

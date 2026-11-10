@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { Legal } from '@/components/Legal'
+import { getSite } from '@/lib/site'
 import { BUSINESS, HOLD_HOURS } from '@/lib/config'
 export const metadata: Metadata = { title: 'Terms of booking', alternates: { canonical: '/terms' } }
-export default function Terms() {
+export default async function Terms() {
+  const { business: biz } = await getSite()
   return (
     <Legal title="Terms of booking" updated="5 November 2026">
-      <p>These terms apply to trips booked with {BUSINESS.name}, {BUSINESS.address}.</p>
+      <p>These terms apply to trips booked with {BUSINESS.name}, {biz.address}.</p>
       <h2>Holding seats</h2>
       <p>When you submit the booking form on a group trip, we hold your seats for {HOLD_HOURS} hours. A hold is not a confirmed booking. If the advance is not paid in that time, the seats are released and may be taken by someone else.</p>
       <h2>Confirming a booking</h2>

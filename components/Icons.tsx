@@ -121,6 +121,68 @@ const paths: Record<string, React.ReactNode> = {
   ),
   plus: <path d="M12 5v14M5 12h14" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
+  grid: (
+    <>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M20 20l-4.3-4.3" />
+    </>
+  ),
+  phone: <path d="M8.6 3.8l1.7 3.9-2 1.5a10.5 10.5 0 006.5 6.5l1.5-2 3.9 1.7-.5 3.3a1.6 1.6 0 01-1.7 1.3A16.6 16.6 0 014 6a1.6 1.6 0 011.3-1.7z" />,
+  pencil: (
+    <>
+      <path d="M15.6 5.2l3.2 3.2L8.6 18.6 4.5 19.5l.9-4.1z" />
+      <path d="M13.6 7.2l3.2 3.2" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M14 4.5H6.5a2 2 0 00-2 2v11a2 2 0 002 2H14" />
+      <path d="M10.5 12h10M17 8.5l3.5 3.5-3.5 3.5" />
+    </>
+  ),
+  image: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.6" />
+      <circle cx="9" cy="10" r="1.8" />
+      <path d="M4 17.5l5-4.5 4 3.5 2.5-2 4.5 4" />
+    </>
+  ),
+  external: (
+    <>
+      <path d="M14 4.5h5.5V10M19.5 4.5L11 13" />
+      <path d="M17 13.5v4.5a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V8.5A1.5 1.5 0 016 7h4.5" />
+    </>
+  ),
+  alert: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v5.2M12 16.3h.01" />
+    </>
+  ),
+  up: <path d="M12 19V5M6.5 10.5L12 5l5.5 5.5" />,
+  down: <path d="M12 5v14M6.5 13.5L12 19l5.5-5.5" />,
+  copy: (
+    <>
+      <rect x="8.5" y="8.5" width="11" height="11" rx="2" />
+      <path d="M15.5 8.5V6a1.5 1.5 0 00-1.5-1.5H6A1.5 1.5 0 004.5 6v8A1.5 1.5 0 006 15.5h2.5" />
+    </>
+  ),
+  print: (
+    <>
+      <path d="M7 9V4h10v5" />
+      <rect x="4" y="9" width="16" height="7.5" rx="2" />
+      <path d="M7 14h10v6H7z" />
+    </>
+  ),
+  rupee: <path d="M7 5h10M7 9h10M7 5c5 0 7 1.5 7 4s-2 4-6 4H7l7 6" />,
 }
 
 export type IconName = keyof typeof paths

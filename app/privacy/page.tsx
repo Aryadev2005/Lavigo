@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { Legal } from '@/components/Legal'
+import { getSite } from '@/lib/site'
 import { BUSINESS } from '@/lib/config'
 export const metadata: Metadata = { title: 'Privacy policy', alternates: { canonical: '/privacy' } }
-export default function Privacy() {
+export default async function Privacy() {
+  const { business: biz } = await getSite()
   return (
     <Legal title="Privacy policy" updated="5 November 2026">
-      <p>{BUSINESS.name} (&quot;Lavigo&quot;, &quot;we&quot;) runs this website from {BUSINESS.address}. This page explains what we collect and why.</p>
+      <p>{BUSINESS.name} (&quot;Lavigo&quot;, &quot;we&quot;) runs this website from {biz.address}. This page explains what we collect and why.</p>
       <h2>What we collect</h2>
       <ul>
         <li>When you hold seats on a group trip: your name, mobile number, optional email, the number of travellers and any traveller names you add.</li>
@@ -19,7 +21,7 @@ export default function Privacy() {
       <h2>How long we keep it</h2>
       <p>We keep booking records for as long as needed to run your trip and meet accounting and legal requirements.</p>
       <h2>Your choices</h2>
-      <p>You can ask us to correct or delete your details by messaging {BUSINESS.phoneDisplay} on WhatsApp{BUSINESS.email ? ` or emailing ${BUSINESS.email}` : ''}. We may need to keep some records where the law requires it.</p>
+      <p>You can ask us to correct or delete your details by messaging {BUSINESS.phoneDisplay} on WhatsApp{biz.email ? ` or emailing ${biz.email}` : ''}. We may need to keep some records where the law requires it.</p>
     </Legal>
   )
 }

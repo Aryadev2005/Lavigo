@@ -1,11 +1,19 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { deleteDeparture, deleteTrip, saveDeparture, saveTrip } from '../../../actions'
+import { deleteTrip, duplicateTrip, saveTrip } from '../../../actions'
 import { ConfirmButton } from '@/components/admin/ConfirmButton'
+import { DepartureForm } from '@/components/admin/DepartureForm'
+import { GalleryEditor } from '@/components/admin/GalleryEditor'
 import { ImageField } from '@/components/admin/ImageField'
 import { RowsEditor } from '@/components/admin/RowsEditor'
+import { Icon } from '@/components/Icons'
+import { Flash, GenderBar, Head, SeatMeter, dDay, money } from '@/components/admin/ui'
 import { getTripAdmin, listDestinationsAdmin } from '@/lib/admin-data'
-import { fmtDate, todayISO } from '@/lib/format'
+import { todayISO } from '@/lib/format'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return { title: (await params).id === 'new' ? 'New trip' : 'Edit trip' }
+}
 
 export default async function TripEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ err?: string; ok?: string }> }) {
   const [{ id }, sp] = await Promise.all([params, searchParams])
@@ -14,96 +22,119 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
   if (!isNew && !trip) notFound()
   const t = trip
   const today = todayISO()
+  const here = `/admin/trips/${id}`
+  const upcoming = t?.departures.filter((d) => d.depart_date >= today) ?? []
+  const past = t?.departures.filter((d) => d.depart_date < today) ?? []
 
   return (
     <>
-      <p className="crumbs" style={{ padding: 0, marginBottom: 6 }}><Link href="/admin/trips">← All trips</Link></p>
-      <h1>{isNew ? 'New trip' : t!.title}</h1>
-      {sp.err && <div className="errbox" role="alert">{sp.err}</div>}
-      {sp.ok && <div className="okbox" role="status">{sp.ok}</div>}
+      <Head back={{ href: '/admin/trips', label: 'Trips' }} title={isNew ? 'New trip' : t!.title}
+        sub={isNew ? 'Fill in the basics and save. You can add photos and dates right after.' : <>{t!.published ? 'Live on the website' : 'Hidden from the website'} · /trips/{t!.slug}</>}>
+        {!isNew && <a href={`/trips/${t!.slug}`} target="_blank" rel="noopener" className="btn b-ghost"><Icon name="external" size={16} />View page</a>}
+        {!isNew && <form action={duplicateTrip}><input type="hidden" name="id" value={t!.id} /><button className="btn b-ghost"><Icon name="copy" size={16} />Duplicate</button></form>}
+      </Head>
+      <Flash ok={sp.ok} err={sp.err} />
 
-      <form action={saveTrip} className="card pane" style={{ marginTop: 14 }}>
+      {!isNew && (
+        <nav className="ad-jump" aria-label="Sections">
+          <a href="#basics">Basics</a><a href="#photos">Photos</a><a href="#days">Day by day</a><a href="#included">Included</a><a href="#faqs">Questions</a><a href="#departures">Departures</a>
+        </nav>
+      )}
+
+      <form action={saveTrip}>
         {!isNew && <input type="hidden" name="id" value={t!.id} />}
-        <div className="grid2">
-          <div><label className="l">Trip title</label><input className="inp" name="title" defaultValue={t?.title} required placeholder="Nepal group trip" /></div>
-          <div><label className="l">Web address (leave blank to auto-fill)</label><input className="inp" name="slug" defaultValue={t?.slug} placeholder="nepal-trip-from-ranchi" /></div>
-        </div>
-        <div className="grid3">
-          <div><label className="l">Destination</label>
-            <select className="inp" name="destination_id" defaultValue={t?.destination_id ?? ''}><option value="">None</option>{dests.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-          <div><label className="l">Nights</label><input className="inp" type="number" name="nights" min={0} max={30} defaultValue={t?.nights ?? 3} required /></div>
-          <div><label className="l">Route</label><input className="inp" name="route" defaultValue={t?.route} placeholder="Ranchi → NJP → Darjeeling" /></div>
-        </div>
-        <label className="l">Short description (shown on the page and to Google)</label>
-        <textarea className="inp" name="summary" defaultValue={t?.summary} />
-        <label className="l">Main photo</label>
-        <ImageField name="image" value={t?.image ?? ''} />
+        <section className="card pane" id="basics">
+          <h2 className="ad-h2">Basics</h2>
+          <p className="ad-sub">What visitors see first on the trip page and in Google.</p>
+          <div className="g2">
+            <div className="fld"><label className="l" htmlFor="t-title">Trip title</label><input id="t-title" className="inp" name="title" defaultValue={t?.title} required placeholder="Nepal group trip" /></div>
+            <div className="fld"><label className="l" htmlFor="t-slug">Web address</label><input id="t-slug" className="inp" name="slug" defaultValue={t?.slug} placeholder="filled in from the title" />
+              <p className="hint">lavigo.in/trips/<b>{t?.slug ?? 'your-trip'}</b>. Changing it breaks links already shared.</p></div>
+          </div>
+          <div className="g3">
+            <div className="fld"><label className="l" htmlFor="t-dest">Destination</label>
+              <select id="t-dest" className="inp" name="destination_id" defaultValue={t?.destination_id ?? ''}><option value="">None</option>{dests.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
+              <p className="hint">Its hotels, cars and photos appear on the trip page.</p></div>
+            <div className="fld"><label className="l" htmlFor="t-n">Nights</label><input id="t-n" className="inp" type="number" name="nights" min={0} max={30} defaultValue={t?.nights ?? 3} required /></div>
+            <div className="fld"><label className="l" htmlFor="t-r">Route</label><input id="t-r" className="inp" name="route" defaultValue={t?.route} placeholder="Ranchi → NJP → Darjeeling" /></div>
+          </div>
+          <div className="fld"><label className="l" htmlFor="t-s">Short description</label><textarea id="t-s" className="inp" name="summary" defaultValue={t?.summary} maxLength={600} placeholder="Two or three sentences: what makes this trip special." /></div>
+          <label className="chk"><input type="checkbox" name="published" defaultChecked={t ? t.published : true} /><span><b>Show on website</b><small>Untick to hide this trip without deleting it. Existing bookings are not affected.</small></span></label>
+        </section>
 
-        <label className="l" style={{ marginTop: 16 }}>Day-by-day itinerary</label>
-        <RowsEditor name="itinerary_json" addLabel="Add a day" initial={(t?.itinerary ?? []).map((d) => ({ title: d.title, text: d.text }))}
-          fields={[{ key: 'title', label: 'Day title', placeholder: 'Ranchi → Raxaul → Pokhara' }, { key: 'text', label: 'What happens', type: 'textarea' }]} />
+        <section className="card pane" id="photos">
+          <h2 className="ad-h2">Photos</h2>
+          <p className="ad-sub">The cover photo leads the trip card and page. Gallery photos follow it in the photo grid. With no gallery, the destination&apos;s photos are used.</p>
+          <label className="l">Cover photo</label>
+          <ImageField name="image" value={t?.image ?? ''} />
+          <label className="l" style={{ marginTop: 18 }}>Gallery</label>
+          <GalleryEditor name="gallery_json" initial={(t?.gallery ?? []).map((g) => ({ src: g.src, caption: g.caption }))} />
+        </section>
 
-        <div className="grid2">
-          <div><label className="l">Included (one per line)</label><textarea className="inp" name="inclusions" defaultValue={(t?.inclusions ?? []).join('\n')} /></div>
-          <div><label className="l">Not included (one per line)</label><textarea className="inp" name="exclusions" defaultValue={(t?.exclusions ?? []).join('\n')} /></div>
-        </div>
+        <section className="card pane" id="days">
+          <h2 className="ad-h2">Day by day</h2>
+          <p className="ad-sub">One entry per day, in order. Add a photo to a day to show it beside that day on the website and in the PDF.</p>
+          <RowsEditor name="itinerary_json" addLabel="Add a day" itemLabel="Day" initial={(t?.itinerary ?? []).map((d) => ({ title: d.title, text: d.text, image: d.image ?? '' }))}
+            fields={[{ key: 'title', label: 'Title', placeholder: 'Ranchi → Raxaul → Pokhara' }, { key: 'text', label: 'What happens', type: 'textarea', placeholder: 'Leave Ranchi at 6 am…' }, { key: 'image', label: 'Photo for this day (optional)', type: 'image' }]} />
+        </section>
 
-        <label className="l" style={{ marginTop: 6 }}>Questions &amp; answers (helps Google and AI assistants answer about this trip)</label>
-        <RowsEditor name="faqs_json" addLabel="Add a question" initial={(t?.faqs ?? []).map((f) => ({ q: f.q, a: f.a }))}
-          fields={[{ key: 'q', label: 'Question' }, { key: 'a', label: 'Answer', type: 'textarea' }]} />
+        <section className="card pane" id="included">
+          <h2 className="ad-h2">What&apos;s included</h2>
+          <p className="ad-sub">Shown on the trip page and in the PDF itinerary. One item per line. Prices are never broken down for customers.</p>
+          <div className="g2">
+            <div className="fld"><label className="l" htmlFor="t-inc">Included</label><textarea id="t-inc" className="inp" name="inclusions" defaultValue={(t?.inclusions ?? []).join('\n')} style={{ minHeight: 160 }} placeholder={'Hotel stays (twin sharing)\nBreakfast and dinner'} /></div>
+            <div className="fld"><label className="l" htmlFor="t-exc">Not included</label><textarea id="t-exc" className="inp" name="exclusions" defaultValue={(t?.exclusions ?? []).join('\n')} style={{ minHeight: 160 }} placeholder={'Lunch\nEntry tickets'} /></div>
+          </div>
+        </section>
 
-        <label className="act" style={{ marginTop: 16, display: 'flex' }}><input type="checkbox" name="published" defaultChecked={t ? t.published : true} /><span className="x"><b>Show on website</b><small>Untick to hide this trip without deleting it.</small></span></label>
-        <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-          <button className="btn b-main">{isNew ? 'Create trip' : 'Save trip'}</button>
+        <section className="card pane" id="faqs">
+          <h2 className="ad-h2">Questions &amp; answers</h2>
+          <p className="ad-sub">Help visitors, Google and AI assistants answer questions about this trip.</p>
+          <RowsEditor name="faqs_json" addLabel="Add a question" itemLabel="Question" initial={(t?.faqs ?? []).map((f) => ({ q: f.q, a: f.a }))}
+            fields={[{ key: 'q', label: 'Question' }, { key: 'a', label: 'Answer', type: 'textarea' }]} />
+        </section>
+
+        <div className="ad-savebar">
+          <span>{isNew ? 'Create the trip, then add photos and dates.' : 'Changes go live on the website within a minute of saving.'}</span>
+          <button className="btn b-main lg">{isNew ? 'Create trip' : 'Save trip'}</button>
         </div>
       </form>
 
       {!isNew && (
-        <>
-          <h2 id="departures" style={{ margin: '28px 0 6px' }}>Departures (date, price, seats)</h2>
-          <p className="muted" style={{ marginBottom: 12 }}>Customers can only book dates listed here. Each date can start from a different city. &quot;Left&quot; updates by itself as people book. Price is per person, including GST.</p>
-          <div className="card tbl-scroll"><table>
-            <thead><tr><th>Date · starts from</th><th>Price (₹)</th><th>Total seats</th><th>Status</th><th>Booked / held / left</th><th></th></tr></thead>
-            <tbody>
-              {t!.departures.map((d) => (
-                <tr key={d.id} style={d.depart_date < today ? { opacity: 0.55 } : undefined}>
-                  <td colSpan={4} style={{ padding: 0 }}>
-                    <form action={saveDeparture} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.2fr 1fr .9fr 1fr auto', gap: 8, padding: '10px 12px', alignItems: 'center' }}>
-                      <input type="hidden" name="id" value={d.id} /><input type="hidden" name="trip_id" value={t!.id} />
-                      <input className="inp sm" type="date" name="depart_date" defaultValue={d.depart_date} required aria-label="Departure date" />
-                      <input className="inp sm" name="start_city" defaultValue={d.start_city ?? 'Ranchi'} placeholder="Start city" aria-label="Starts from (city)" />
-                      <input className="inp sm" type="number" name="price" min={0} defaultValue={d.price} required aria-label="Price per person" />
-                      <input className="inp sm" type="number" name="seats_total" min={0} defaultValue={d.seats_total} required aria-label="Total seats" />
-                      <select className="inp sm" name="status" defaultValue={d.status} aria-label="Status"><option value="open">Open</option><option value="closed">Closed</option></select>
-                      <button className="btn b-ghost sm">Save</button>
-                    </form>
-                  </td>
-                  <td>{d.taken - d.held} / {d.held} / <b>{d.seats_left}</b></td>
-                  <td><form action={deleteDeparture}><input type="hidden" name="id" value={d.id} /><input type="hidden" name="trip_id" value={t!.id} /><ConfirmButton className="btn b-danger sm" message={`Delete the ${fmtDate(d.depart_date, { day: 'numeric', month: 'short', year: 'numeric' })} departure?`}>Delete</ConfirmButton></form></td>
-                </tr>
-              ))}
-              <tr>
-                <td colSpan={4} style={{ padding: 0 }}>
-                  <form action={saveDeparture} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.2fr 1fr .9fr 1fr auto', gap: 8, padding: '10px 12px', alignItems: 'center', background: 'var(--lav3)' }}>
-                    <input type="hidden" name="trip_id" value={t!.id} />
-                    <input className="inp sm" type="date" name="depart_date" min={today} required aria-label="New departure date" />
-                    <input className="inp sm" name="start_city" placeholder="Starts from, e.g. Kolkata" aria-label="Starts from (city)" />
-                    <input className="inp sm" type="number" name="price" min={0} placeholder="Price" required aria-label="Price per person" />
-                    <input className="inp sm" type="number" name="seats_total" min={0} placeholder="Seats" required aria-label="Total seats" />
-                    <select className="inp sm" name="status" aria-label="Status"><option value="open">Open</option><option value="closed">Closed</option></select>
-                    <button className="btn b-main sm">+ Add date</button>
-                  </form>
-                </td>
-                <td colSpan={2}></td>
-              </tr>
-            </tbody>
-          </table></div>
+        <section className="ad-sec" id="departures">
+          <h2 className="ad-h2">Departures</h2>
+          <p className="ad-sub">Customers can only book dates listed here. Each date has its own price, seats and starting city. Open one to see who is travelling.</p>
+          <div className="card ad-scroll" style={{ marginBottom: 14 }}>
+            {upcoming.length === 0 ? <div className="ad-empty"><b>No upcoming dates</b>Add the next departure below so customers can book.</div> : (
+              <table className="ad-tbl">
+                <thead><tr><th>Date</th><th>From</th><th className="num">Price</th><th style={{ minWidth: 200 }}>Seats</th><th>Travellers</th><th>Booking</th><th></th></tr></thead>
+                <tbody>
+                  {upcoming.map((d) => (
+                    <tr key={d.id}>
+                      <td><b>{dDay(d.depart_date)}</b></td>
+                      <td>{d.start_city}</td>
+                      <td className="num">{money(d.price)}</td>
+                      <td><SeatMeter total={d.seats_total} confirmed={d.stats.confirmedSeats} held={d.stats.heldSeats} /></td>
+                      <td><GenderBar g={d.stats.genders} /></td>
+                      <td><span className={'pill ' + d.status}>{d.status === 'open' ? 'Open' : 'Closed'}</span></td>
+                      <td><Link href={`/admin/departures/${d.id}`} className="btn b-ghost sm">Open</Link></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="card pane">
+            <h2 className="ad-h2" style={{ fontSize: 17 }}>Add a departure</h2>
+            <DepartureForm tripId={t!.id} back={`${here}#departures`} minDate={today} />
+          </div>
+          {past.length > 0 && <p className="hint" style={{ marginTop: 10 }}>{past.length} past departure{past.length > 1 ? 's' : ''}: see <Link href="/admin/departures?when=past" style={{ color: 'var(--ink3)' }}>Departures → Past</Link>.</p>}
 
           <form action={deleteTrip} style={{ marginTop: 28 }}>
             <input type="hidden" name="id" value={t!.id} />
-            <ConfirmButton className="btn b-danger sm" message={`Delete "${t!.title}" and all its dates? This cannot be undone.`}>Delete this trip</ConfirmButton>
+            <ConfirmButton className="btn b-danger sm" message={`Delete "${t!.title}" and all its dates? This cannot be undone. Trips with bookings cannot be deleted.`}>Delete this trip</ConfirmButton>
           </form>
-        </>
+        </section>
       )}
     </>
   )

@@ -31,7 +31,7 @@ export type Destination = {
   published: boolean
 }
 
-export type ItineraryDay = { title: string; text: string }
+export type ItineraryDay = { title: string; text: string; image?: string | null }
 export type Faq = { q: string; a: string }
 
 export type Trip = {
@@ -43,6 +43,7 @@ export type Trip = {
   summary: string
   nights: number
   image: string | null
+  gallery?: GalleryImage[]
   itinerary: ItineraryDay[]
   inclusions: string[]
   exclusions: string[]
@@ -80,6 +81,7 @@ export type Booking = {
   passengers?: Passenger[]
   ticket_by?: TicketBy
   from_city?: string | null
+  source?: 'website' | 'admin'
   status: BookingStatus
   hold_expires_at: string | null
   amount_total: number
@@ -94,3 +96,6 @@ export type Booking = {
   confirmed_at: string | null
   cancelled_at: string | null
 }
+
+export type PayMethod = 'upi' | 'cash' | 'bank' | 'card' | 'other'
+export type Payment = { id: string; booking_id: string; amount: number; method: PayMethod; note: string | null; created_at: string }

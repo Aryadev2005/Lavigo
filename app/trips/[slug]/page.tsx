@@ -49,11 +49,18 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
   const cars = dest?.cars ?? []
   const itineraryHref = `/trips/${trip.slug}/itinerary?dl=1${dep ? `&dep=${dep.id}` : ''}`
 
+  // The trip's own gallery wins; otherwise the destination's photos fill the grid.
+  const own = (trip.gallery ?? []).filter((g) => g?.src)
+  const pool = own.length ? own : dest?.gallery ?? []
   const photos: GalleryImage[] = [
     ...(trip.image ? [{ src: trip.image, caption: trip.title }] : []),
-    ...(dest?.gallery ?? []).filter((g) => g.src !== trip.image),
+    ...pool.filter((g) => g.src !== trip.image),
   ]
-  const dayPhoto = (i: number) => dest?.gallery[i] ?? null
+  const dayPhoto = (i: number): GalleryImage | null => {
+    const d = trip.itinerary[i]
+    if (d?.image) return { src: d.image, caption: d.title }
+    return pool[i] ?? null
+  }
 
   const jsonLd = [
     {

@@ -15,17 +15,17 @@ const tabs: { href: string; label: string; icon: IconName; match: (p: string) =>
   { href: '/#about', label: 'About Us', icon: 'shield', match: () => false },
 ]
 
-export function Header() {
+export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: string; instagram?: string }) {
   const path = usePathname()
   if (path.startsWith('/admin') || path.endsWith('/itinerary')) return null
   return (
     <>
       <div className="m-util">
         <div className="m-wrap">
-          <span className="m-util-l">Trips from anywhere in India · Nepal · Darjeeling · Sikkim · Netarhat · Puri · Goa</span>
+          <span className="m-util-l">{topbar ?? 'Trips from anywhere in India · Nepal · Darjeeling · Sikkim · Netarhat · Puri · Goa'}</span>
           <span className="m-util-r">
             <a href={`tel:${BUSINESS.phoneE164}`}>{BUSINESS.phoneDisplay}</a>
-            <a href={BUSINESS.instagram} target="_blank" rel="noopener">@lavigo.in</a>
+            <a href={instagram} target="_blank" rel="noopener">Instagram</a>
           </span>
         </div>
       </div>

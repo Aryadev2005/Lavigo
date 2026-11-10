@@ -10,19 +10,12 @@ import { TripCard } from '@/components/TripCard'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
 import { addDays, inr, isoDate, todayISO } from '@/lib/format'
-import { ABOUT_IMAGE, HERO_IMAGE, HERO_VIDEO, PLAN_IMAGE, REELS, TRIP_PHOTOS } from '@/lib/media'
+import { ABOUT_IMAGE, HERO_IMAGE, HERO_VIDEO, PLAN_IMAGE, REELS } from '@/lib/media'
+import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
 
-const FAQ = [
-  { q: 'Where do Lavigo trips start from?', a: 'From anywhere in India. Each group departure shows its starting city, and Lavigo can book your train or flight to it from your own city. Custom trips start from whichever city you choose.' },
-  { q: 'Which destinations does Lavigo cover?', a: 'Nepal (Pokhara and Kathmandu), Darjeeling, Sikkim, Netarhat, Puri and Goa, as fixed-date group trips or custom private trips.' },
-  { q: 'How do I book a group trip?', a: 'Pick a departure on the trip page, add each traveller\'s name and gender, and choose whether Lavigo books your train or flight tickets. Your seats are held online, and you pay a 25% advance on WhatsApp to confirm. The balance is paid before you travel.' },
-  { q: 'How long are seats held before I pay?', a: 'Seats are held for 24 hours after you submit the booking form. If the advance is not paid in that time, the seats are released for other travellers.' },
-  { q: 'Can I see the hotels and cars before I book?', a: 'Yes. Every trip page lists the hotels and cars used at the destination, along with what is and is not included. You can also download the full day-by-day itinerary as a PDF.' },
-  { q: 'Can I plan a trip on my own dates?', a: 'Yes. Use the trip planner to choose your starting city, places, nights, hotel type, cars and activities. You see a day-by-day plan and an estimate, can download it as a PDF, and get the final quote on WhatsApp.' },
-]
 
 const TRUST: { t: string; s: string; c: 'lav' | 'sun'; i: IconName }[] = [
   { t: 'Seats held 24 hours', s: 'Reserve now, pay later', c: 'lav', i: 'clock' },
@@ -32,7 +25,10 @@ const TRUST: { t: string; s: string; c: 'lav' | 'sun'; i: IconName }[] = [
 ]
 
 export default async function Home() {
-  const [dests, trips] = await Promise.all([getDestinations(), getTrips()])
+  const [dests, trips, site] = await Promise.all([getDestinations(), getTrips(), getSite()])
+  const { home, business } = site
+  const FAQ = home.faqs
+  const headLines = home.headline.split('\n').map((l) => l.trim()).filter(Boolean)
   const withDeps = trips.filter((t) => t.departures.length)
   const minDate = isoDate(addDays(todayISO(), 7))
 
@@ -59,8 +55,8 @@ export default async function Home() {
         <div className="m-wrap m-hero-in">
           <div className="m-hero-top">
             <div>
-              <p className="m-kicker">Group journeys and private holidays</p>
-              <h1 className="m-hero-h">Trips from anywhere in India,<br />planned day by day.</h1>
+              <p className="m-kicker">{home.kicker}</p>
+              <h1 className="m-hero-h">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}{l}</span>)}</h1>
             </div>
             <Link href="/#moments" className="m-reel-btn">
               <span aria-hidden="true"><Icon name="play" size={16} /></span>
@@ -85,7 +81,7 @@ export default async function Home() {
         <section className="m-sec">
           <div className="m-wrap">
             <div className="m-sec-h">
-              <div><h2>Upcoming group departures</h2><p>Fixed dates, small groups and a trip leader on every departure. Join from any city.</p></div>
+              <div><h2>Upcoming group departures</h2><p>{home.subline}</p></div>
               <Link href="/trips" className="m-more">View all trips <Icon name="arrow" size={18} /></Link>
             </div>
             <div className="m-g4">{withDeps.slice(0, 4).map((t) => <TripCard key={t.id} trip={t} />)}</div>
@@ -117,20 +113,20 @@ export default async function Home() {
         <div className="m-wrap">
           <div className="m-sec-h">
             <div><h2>Trip moments</h2><p>Short videos from our recent Nepal group trip.</p></div>
-            <a href={BUSINESS.instagram} target="_blank" rel="noopener" className="m-more">More on Instagram @lavigo.in <Icon name="arrow" size={18} /></a>
+            <a href={business.instagram} target="_blank" rel="noopener" className="m-more">More on Instagram <Icon name="arrow" size={18} /></a>
           </div>
-          <Moments reels={REELS} instagram={BUSINESS.instagram} />
+          <Moments reels={REELS} instagram={business.instagram} />
         </div>
       </section>
 
-      {TRIP_PHOTOS.length > 0 && (
+      {home.photos.length > 0 && (
         <section className="m-sec" id="gallery">
           <div className="m-wrap">
             <div className="m-sec-h">
-              <div><h2>From our last trip</h2><p>Real Lavigo travellers, photographed on the road in Nepal.</p></div>
+              <div><h2>{home.photosTitle}</h2><p>{home.photosText}</p></div>
               <Link href="/trips" className="m-more">See upcoming trips <Icon name="arrow" size={18} /></Link>
             </div>
-            <PhotoWall photos={TRIP_PHOTOS} label="Lavigo Nepal trip" />
+            <PhotoWall photos={home.photos} label="Lavigo trip" />
           </div>
         </section>
       )}
@@ -170,7 +166,7 @@ export default async function Home() {
             <div style={{ padding: 24 }}>
               <h2 className="m-h3">One team, trips for all of India</h2>
               <p className="m-muted" style={{ marginTop: 8 }}>{BUSINESS.name} plans every trip from our office in Ranchi and welcomes travellers from any city. A Lavigo trip leader travels with each group from the first day to the last.</p>
-              <p className="m-sm" style={{ marginTop: 12 }}>{BUSINESS.address}</p>
+              <p className="m-sm" style={{ marginTop: 12 }}>{business.address}</p>
             </div>
           </div>
           <div className="m-about-faq">

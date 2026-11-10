@@ -2,7 +2,12 @@ import type { NextConfig } from 'next'
 
 // hostname of the Supabase project (tolerates a pasted "/rest/v1/" suffix, quotes, etc.)
 let supabaseHost: string | undefined
-try { supabaseHost = new URL((process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/^["']+|["']+$/g, '')).hostname } catch { /* not set yet */ }
+let supabaseProto: 'https' | 'http' = 'https'
+try {
+  const u = new URL((process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/^["']+|["']+$/g, ''))
+  supabaseHost = u.hostname
+  if (u.protocol === 'http:') supabaseProto = 'http' // local development only
+} catch { /* not set yet */ }
 
 const config: NextConfig = {
   images: {
@@ -13,7 +18,7 @@ const config: NextConfig = {
     qualities: [70],
     minimumCacheTTL: 31536000, // photos rarely change; cache optimised copies for a year
     // Photos uploaded from the admin panel live in Supabase Storage
-    remotePatterns: supabaseHost ? [{ protocol: 'https', hostname: supabaseHost, pathname: '/storage/v1/object/public/**' }] : [],
+    remotePatterns: supabaseHost ? [{ protocol: supabaseProto, hostname: supabaseHost, pathname: '/storage/v1/object/public/**' }] : [],
   },
   poweredByHeader: false,
   // photo uploads from /admin (browser downsizes to ~1600px first; Vercel's hard cap is 4.5 MB)
