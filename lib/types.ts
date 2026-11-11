@@ -1,10 +1,12 @@
 export type Activity = { id: string; n: string; p: number; where: string }
 export type GalleryImage = { src: string; caption: string }
 export type Tier = 'budget' | 'comfort' | 'premium'
-export type Hotel = { name: string; place: string; tier: Tier; stars: number; note: string }
-export type Car = { name: string; kind: string; seats: number; note: string }
+export type Hotel = { name: string; place: string; tier: Tier; stars: number; note: string; image?: string | null }
+export type Car = { name: string; kind: string; seats: number; note: string; image?: string | null }
+/** The cab for one departure (migration 008). Shown to confirmed travellers on their booking page. */
+export type Cab = { vehicle?: string; number?: string; driver?: string; driver_phone?: string; pickup?: string; note?: string; image?: string | null }
 export type Gender = 'male' | 'female'
-export type Passenger = { name: string; gender: Gender }
+export type Passenger = { name: string; gender: Gender; dob?: string; id_checked?: boolean }
 export type TicketBy = 'agency' | 'self'
 
 export type Destination = {
@@ -68,6 +70,11 @@ export type Trip = {
   places?: TripPlace[]
   good_to_know?: GoodToKnow[]
   things_to_carry?: string[]
+  // Migration 008: the owner's own PDF itinerary, hotels and cars for this trip (else the destination's), group or weekend
+  itinerary_pdf?: string | null
+  hotels?: Hotel[]
+  cars?: Car[]
+  kind?: 'group' | 'weekend'
 }
 
 export type Departure = {
@@ -79,6 +86,7 @@ export type Departure = {
   seats_left: number
   status: 'open' | 'closed'
   start_city: string
+  cab?: Cab
 }
 
 export type TripWithDepartures = Trip & {
@@ -101,6 +109,8 @@ export type Booking = {
   ticket_by?: TicketBy
   from_city?: string | null
   source?: 'website' | 'admin'
+  user_id?: string | null
+  itinerary_url?: string | null
   status: BookingStatus
   hold_expires_at: string | null
   amount_total: number

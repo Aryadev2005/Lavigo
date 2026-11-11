@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { addPayment, cancelBooking, confirmBooking, extendHold, moveBooking, updateBooking } from '../../../actions'
+import { addPayment, cancelBooking, confirmBooking, extendHold, moveBooking, setBookingItinerary, updateBooking } from '../../../actions'
+import { FileField } from '@/components/admin/FileField'
 import { ConfirmButton } from '@/components/admin/ConfirmButton'
 import { PassengerEditor } from '@/components/admin/PassengerEditor'
 import { Flash, Head, PayPill, StatusPill, dDay, dShort, money, rel, waTo, when } from '@/components/admin/ui'
@@ -52,7 +53,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
     <>
       <Head back={{ href: '/admin/bookings', label: 'Bookings' }}
         title={<>{b.code} <span style={{ fontSize: 16, verticalAlign: 'middle', marginLeft: 6 }}><StatusPill b={b} /></span></>}
-        sub={<>{b.source === 'admin' ? 'Added by you' : 'Booked on the website'} {rel(b.created_at)} · {trip.title}, {date}</>}>
+        sub={<>{b.source === 'admin' ? 'Added by you' : b.user_id ? `Booked on the website by ${b.email ?? 'a signed-in customer'}` : 'Booked on the website'} {rel(b.created_at)} · {trip.title}, {date}</>}>
         <a className="btn b-wa" href={waTo(b.phone)} target="_blank" rel="noopener"><Icon name="phone" size={16} />WhatsApp {first}</a>
         <a className="btn b-ghost" href={`tel:+91${b.phone}`}>Call</a>
         <a className="btn b-ghost" href={`/trips/${trip.slug}/itinerary?dep=${b.departure.id}`} target="_blank" rel="noopener"><Icon name="download" size={16} />Itinerary</a>
@@ -65,11 +66,11 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
           <form action={updateBooking} className="card pane">
             <input type="hidden" name="id" value={b.id} /><input type="hidden" name="back" value={here} />
             <h2 className="ad-h2">Travellers</h2>
-            <p className="ad-sub">Edit names and genders, or add and remove travellers. Adding someone needs a free seat ({seatsFree - b.travellers} left on this date); the total changes at {money(perPerson)} per person unless you set it below.</p>
+            <p className="ad-sub">Edit names, genders and dates of birth (children up to 11 pay 60%), tick &quot;ID checked&quot; once you have seen each photo ID, or add and remove travellers. Adding someone needs a free seat ({seatsFree - b.travellers} left on this date); the total changes at {money(perPerson)} per person unless you set it below.</p>
             {b.status === 'cancelled' ? (
               <ul className="ad-pay">{trav.map((t, i) => <li key={i}><span>{i + 1}. {t.name}</span><span className={'gx ' + (t.gender ?? 'unknown')}>{t.gender === 'male' ? 'M' : t.gender === 'female' ? 'F' : '?'}</span></li>)}</ul>
             ) : (
-              <PassengerEditor initial={trav.map((t) => ({ name: t.name, gender: t.gender ?? '' }))} max={Math.max(b.travellers, seatsFree)} />
+              <PassengerEditor initial={trav.map((t) => ({ name: t.name, gender: t.gender ?? '', dob: t.dob, id_checked: t.idChecked }))} max={Math.max(b.travellers, seatsFree)} day={b.departure.depart_date} />
             )}
             {trav.some((t) => !t.gender) && b.status !== 'cancelled' && <p className="hint" style={{ color: 'var(--warn)' }}>This booking was made before genders were asked. Choose male or female for each traveller, then save.</p>}
 
@@ -118,6 +119,15 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
               </details>
             )}
           </div>
+
+          {/* ───── personal itinerary ───── */}
+          <form action={setBookingItinerary} className="card pane" id="itinerary">
+            <input type="hidden" name="booking_id" value={b.id} /><input type="hidden" name="back" value={here + '#itinerary'} />
+            <h2 className="ad-h2">Itinerary for {first}</h2>
+            <p className="ad-sub">Upload a personal PDF (rooming list, tickets, special plan) just for this booking. The customer downloads it from their booking page and My trips. Without one they get the trip&apos;s itinerary.</p>
+            <FileField name="itinerary_url" value={b.itinerary_url ?? ''} kind="pdf" label="Personal itinerary" />
+            <button className="btn b-main" style={{ marginTop: 12 }}>Save itinerary</button>
+          </form>
 
           {/* ───── payments ───── */}
           <div className="card pane">

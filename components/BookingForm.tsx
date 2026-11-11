@@ -1,14 +1,20 @@
 'use client'
-import { useActionState, useState } from 'react'
+import Link from 'next/link'
+import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { reserveSeats, type ReserveState } from '@/app/actions/booking'
-import { ADVANCE, HOLD_HOURS } from '@/lib/config'
+import { ageOn, isChild } from '@/lib/age'
+import { ADVANCE, CHILD_FACTOR, CHILD_MAX_AGE, HOLD_HOURS } from '@/lib/config'
 import { fmtDate, inr } from '@/lib/format'
 import type { Gender, TicketBy } from '@/lib/types'
 import { CityInput } from './CityInput'
+import { Icon } from './Icons'
+import { useMe } from './useMe'
 
 export type DepOption = { id: string; date: string; price: number; seatsLeft: number; startCity: string }
-type Pax = { name: string; gender: Gender | '' }
+type Pax = { name: string; gender: Gender | ''; dob: string }
+const blank = (): Pax => ({ name: '', gender: '', dob: '' })
+const today = () => new Date().toISOString().slice(0, 10)
 
 function Submit({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus()
@@ -18,7 +24,17 @@ function Submit({ disabled }: { disabled: boolean }) {
 export function BookingForm({ departures, whatsappHref }: { departures: DepOption[]; whatsappHref: string }) {
   const firstOpen = departures.find((d) => d.seatsLeft > 0)
   const [depId, setDepId] = useState(firstOpen?.id ?? departures[0]?.id ?? '')
-  const [pax, setPax] = useState<Pax[]>([{ name: '', gender: '' }, { name: '', gender: '' }])
+  const [pax, setPax] = useState<Pax[]>([blank(), blank()])
+  const me = useMe()
+  const [phone, setPhone] = useState('')
+  const [path, setPath] = useState('/trips')
+  useEffect(() => { setPath(window.location.pathname) }, [])
+  // fill in what the account already knows, once
+  useEffect(() => {
+    if (!me.user) return
+    if (me.user.phone) setPhone((v) => v || me.user!.phone)
+    if (me.user.name) setPax((p) => (p[0].name ? p : [{ ...p[0], name: me.user!.name }, ...p.slice(1)]))
+  }, [me.user])
   const [ticket, setTicket] = useState<TicketBy>('agency')
   const [state, action] = useActionState<ReserveState, FormData>(reserveSeats, {})
   const dep = departures.find((d) => d.id === depId)
@@ -34,13 +50,17 @@ export function BookingForm({ departures, whatsappHref }: { departures: DepOptio
   const max = Math.max(1, Math.min(dep?.seatsLeft ?? 1, 20))
   const list = pax.slice(0, max)
   const n = list.length
-  const total = (dep?.price ?? 0) * n
+  const day = dep?.date ?? today()
+  const ages = list.map((p) => ageOn(p.dob, day))
+  const kids = ages.filter((a) => isChild(a)).length
+  const total = Math.round(list.reduce((sum, _p, i) => sum + (dep?.price ?? 0) * (isChild(ages[i]) ? CHILD_FACTOR : 1), 0))
+  const noAdult = ages.every((a) => a !== null) && ages.every((a) => isChild(a))
   const full = !dep || dep.seatsLeft === 0
   const city = dep?.startCity || 'the starting point'
 
   const resize = (to: number) => {
     const k = Math.max(1, Math.min(max, to))
-    setPax((p) => (k > p.length ? [...p, ...Array.from({ length: k - p.length }, () => ({ name: '', gender: '' as const }))] : p.slice(0, k)))
+    setPax((p) => (k > p.length ? [...p, ...Array.from({ length: k - p.length }, blank)] : p.slice(0, k)))
   }
   const upd = (i: number, v: Partial<Pax>) => setPax((p) => p.map((x, j) => (j === i ? { ...x, ...v } : x)))
 
@@ -63,6 +83,19 @@ export function BookingForm({ departures, whatsappHref }: { departures: DepOptio
         ))}
       </fieldset>
 
+      {!me.loading && !me.user && (
+        <div className="bkf-gate">
+          <span className="bkf-gate-ic" aria-hidden="true"><Icon name="user" size={22} /></span>
+          <b>Sign in to book your seats</b>
+          <p>Your Lavigo account keeps your bookings, itineraries and payments in one place. It takes a few seconds with Google or your email.</p>
+          <Link className="bkf-submit" href={`/login?next=${encodeURIComponent(path)}`}>Sign in or create an account</Link>
+          <a className="bkf-gate-wa" href={whatsappHref} target="_blank" rel="noopener">Or ask a question on WhatsApp</a>
+        </div>
+      )}
+      {me.loading && <div className="bkf-gate bkf-gate-skel" aria-hidden="true" />}
+
+      {me.user && <>
+      <p className="bkf-who">Booking as <b>{me.user.email}</b></p>
       <fieldset className="bkf-sec">
         <div className="bkf-row">
           <legend>Travellers</legend>
@@ -86,8 +119,20 @@ export function BookingForm({ departures, whatsappHref }: { departures: DepOptio
               ))}
             </div>
             <input type="hidden" name="pax_gender" value={p.gender} />
+            <div className="bkf-dob">
+              <label className="bkf-l" htmlFor={`dob-${i}`}>Date of birth</label>
+              <input id={`dob-${i}`} name="pax_dob" type="date" className="inp" value={p.dob} max={today()} min="1910-01-01"
+                onChange={(e) => upd(i, { dob: e.target.value })} required />
+              {ages[i] !== null && (
+                <span className={'bkf-age' + (isChild(ages[i]) ? ' kid' : '')}>
+                  {ages[i]} yrs · {isChild(ages[i]) ? `Child, pays ${CHILD_FACTOR * 100}%` : 'Adult'}
+                </span>
+              )}
+            </div>
           </div>
         ))}
+        <p className="bkf-hint">Ages are worked out on the day the trip starts. Children up to {CHILD_MAX_AGE} pay {CHILD_FACTOR * 100}% of the adult price. Please carry a government photo ID for every traveller (a birth certificate or school ID for children): the trip leader checks them at pick-up.</p>
+        {noAdult && <p className="errbox" role="alert">At least one traveller must be an adult (over {CHILD_MAX_AGE}).</p>}
       </fieldset>
 
       <fieldset className="bkf-sec">
@@ -112,19 +157,20 @@ export function BookingForm({ departures, whatsappHref }: { departures: DepOptio
 
       <fieldset className="bkf-sec">
         <legend>Contact</legend>
-        <div className="fld"><label htmlFor="b-phone">WhatsApp number</label><input id="b-phone" name="phone" className="inp" inputMode="numeric" autoComplete="tel-national" placeholder="10-digit mobile number" required /></div>
-        <div className="fld" style={{ marginBottom: 0 }}><label htmlFor="b-email">Email <span style={{ fontWeight: 400 }}>(optional)</span></label><input id="b-email" name="email" type="email" className="inp" autoComplete="email" /></div>
+        <div className="fld" style={{ marginBottom: 0 }}><label htmlFor="b-phone">WhatsApp number</label><input id="b-phone" name="phone" className="inp" inputMode="numeric" autoComplete="tel-national" placeholder="10-digit mobile number" required value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+        <p className="bkf-hint" style={{ marginTop: 8 }}>Confirmation goes to {me.user.email} and this WhatsApp number.</p>
       </fieldset>
 
       <div className="bkf-total">
-        <div><span>Total for {n} traveller{n > 1 ? 's' : ''}</span><b>{inr(total)}</b></div>
+        <div><span>Total for {n} traveller{n > 1 ? 's' : ''}{kids ? ` (${kids} child${kids > 1 ? 'ren' : ''})` : ''}</span><b>{inr(total)}</b></div>
         <div className="adv"><span>Advance to confirm ({ADVANCE * 100}%)</span><b>{inr(Math.round(total * ADVANCE))}</b></div>
         <small>{ticket === 'agency' ? `Includes GST. Tickets to ${city} are quoted separately on WhatsApp.` : 'Includes GST.'}</small>
       </div>
 
       {state.error && <div className="errbox" role="alert">{state.error}</div>}
-      <Submit disabled={full} />
+      <Submit disabled={full || noAdult} />
       <p className="bkf-note">Nothing to pay now. Seats are held for {HOLD_HOURS} hours while you confirm on WhatsApp.</p>
+      </>}
     </form>
   )
 }

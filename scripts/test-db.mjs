@@ -219,5 +219,50 @@ await q(`update trips set itinerary=$2::jsonb where id=$1`, [nepalTrip.id, JSON.
 const dayRow = (await q(`select itinerary from trips where id=$1`, [nepalTrip.id]))[0]
 ok('richer itinerary day fields round-trip', dayRow.itinerary[0].meals === 'B/D' && dayRow.itinerary[0].highlights[0] === 'Sarangkot sunrise', JSON.stringify(dayRow.itinerary))
 
+
+console.log('\nMigration 008: accounts, ages, reviews, enquiries, blog')
+await db.exec('reset role')
+await db.exec(`create schema if not exists auth; create table if not exists auth.users(id uuid primary key, email text);`)
+await db.exec(fs.readFileSync('supabase/migrations/008_accounts_reviews_blog.sql', 'utf8'))
+await db.exec('reset role')
+await db.exec(fs.readFileSync('supabase/migrations/008_accounts_reviews_blog.sql', 'utf8')) // safe to run twice
+await db.exec(`grant execute on all functions in schema public to service_role; grant all on all tables in schema public to service_role;`)
+ok('first travel story seeded once, linked to the Nepal trip', (await q(`select count(*)::int n, bool_and(trip_id is not null) linked from posts`))[0].n === 1)
+const u8 = '11111111-1111-1111-1111-111111111111'
+await q(`insert into auth.users(id, email) values ($1, 'traveller@example.com')`, [u8])
+await db.exec('set role service_role')
+const dep8 = (await q(`select d.id, d.price, d.depart_date from departures d where d.status='open' and d.depart_date > current_date + 30 and d.seats_total - seats_taken(d.id) >= 6 order by depart_date limit 1`))[0]
+const yrs = (n) => { const d = new Date(dep8.depart_date); d.setFullYear(d.getFullYear() - n); return d.toISOString().slice(0, 10) }
+const pax8 = [{ name: 'Asha Kumari', gender: 'female', dob: yrs(34) }, { name: 'Ravi Kumar', gender: 'male', dob: yrs(7) }]
+const h8 = (await q(`select * from create_hold_v3($1,$2,'9811111111',null,$3::jsonb,'self',null)`, [dep8.id, u8, JSON.stringify(pax8)]))[0]
+ok('create_hold_v3 links the booking to the account', h8.user_id === u8)
+ok('a 7-year-old pays 60%: total = adult + 0.6 × adult', h8.amount_total === Math.round(dep8.price * 1.6), `${h8.amount_total} vs ${Math.round(dep8.price * 1.6)}`)
+ok('advance is 25% of the age-adjusted total', h8.amount_advance === Math.round(h8.amount_total * 0.25))
+ok('dates of birth are kept on the passengers', h8.passengers[1].dob === pax8[1].dob && h8.travellers === 2)
+ok('child turning 12 before departure counts as an adult', (await q(`select * from create_hold_v3($1,$2,'9811111112',null,$3::jsonb,'self',null)`, [dep8.id, u8, JSON.stringify([{ name: 'Big Kid', gender: 'male', dob: yrs(12) }])]))[0].amount_total === dep8.price)
+ok('children cannot book without an adult', await throws(`select * from create_hold_v3($1,$2,'9811111113',null,$3::jsonb,'self',null)`, [dep8.id, u8, JSON.stringify([{ name: 'Only Kid', gender: 'male', dob: yrs(9) }])], 'adult_required'))
+ok('a date of birth is required', await throws(`select * from create_hold_v3($1,$2,'9811111114',null,$3::jsonb,'self',null)`, [dep8.id, u8, JSON.stringify([{ name: 'No Dob', gender: 'male' }])], 'bad_dob'))
+ok('a birth date in the future is refused', await throws(`select * from create_hold_v3($1,$2,'9811111114',null,$3::jsonb,'self',null)`, [dep8.id, u8, JSON.stringify([{ name: 'Future', gender: 'male', dob: '2999-01-01' }])], 'bad_dob'))
+ok('a booking needs a signed-in account', await throws(`select * from create_hold_v3($1,null,'9811111114',null,$2::jsonb,'self',null)`, [dep8.id, JSON.stringify(pax8)], 'sign_in_required'))
+const before8 = (await q(`select seats_taken($1) n`, [dep8.id]))[0].n
+ok('seat counting still includes the new holds', before8 >= 3)
+const ub8 = (await q(`select * from update_booking($1,'9811111111',null,$2::jsonb,'self',null,null)`, [h8.id, JSON.stringify([{ ...pax8[0], id_checked: true }, pax8[1]])]))[0]
+ok('admin edits keep dates of birth and the ID check', ub8.passengers[0].id_checked === true && ub8.passengers[1].dob === pax8[1].dob)
+ok('new columns: trip hotels/cars/kind/pdf, departure cab, booking itinerary', (await q(`select t.kind, t.hotels, d.cab, b.itinerary_url from trips t join departures d on d.trip_id=t.id join bookings b on b.departure_id=d.id where b.id=$1`, [h8.id]))[0].kind === 'group')
+await q(`insert into reviews(name, rating, body, status) values ('Shown', 5, 'Lovely trip, great leader.', 'approved'), ('Waiting', 4, 'Good trip overall, thank you.', 'pending')`)
+await q(`insert into enquiries(kind, name, phone, details) values ('custom', 'Enq', '9822222222', '{"destination":"Sikkim"}')`)
+await q(`insert into posts(slug, title, published) values ('draft-story', 'Draft', false)`)
+await db.exec('reset role')
+await db.exec(`grant select on reviews, posts to anon; grant select on enquiries, profiles to anon;`) // Supabase grants table access broadly; RLS decides
+await db.exec('set role anon')
+ok('anon sees only approved reviews', (await q(`select name from reviews`)).map((r) => r.name).join() === 'Shown')
+ok('anon sees only published stories', (await q(`select slug from posts`)).every((p) => p.slug !== 'draft-story'))
+ok('anon cannot read enquiries', (await q(`select * from enquiries`)).length === 0)
+ok('anon cannot read customer profiles', (await q(`select * from profiles`)).length === 0)
+ok('anon cannot call create_hold_v3', await throws(`select * from create_hold_v3($1,$2,'9811111115',null,$3::jsonb,'self',null)`, [dep8.id, u8, JSON.stringify(pax8)]))
+const pubCols = Object.keys((await q(`select * from departures_public limit 1`))[0] ?? {})
+ok('driver details are not in the public departures view', !pubCols.includes('cab'), pubCols.join())
+await db.exec('reset role')
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

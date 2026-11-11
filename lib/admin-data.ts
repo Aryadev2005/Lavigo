@@ -6,7 +6,7 @@ import type { Booking, Departure, Destination, Gender, Passenger, Payment, Trip 
 
 /* ───────────── shared shapes ───────────── */
 export type BookingRow = Booking & { departure: { id: string; depart_date: string; start_city?: string; price: number; trip: { id: string; title: string; slug: string } } }
-export type Traveller = { name: string; gender: Gender | null; lead: boolean }
+export type Traveller = { name: string; gender: Gender | null; lead: boolean; dob?: string; idChecked?: boolean }
 export type GenderCount = { male: number; female: number; unknown: number }
 
 const BOOKING_SELECT = '*, departure:departures(id, depart_date, start_city, price, trip:trips(id, title, slug))'
@@ -19,7 +19,7 @@ export const takesSeats = (b: Pick<Booking, 'status' | 'hold_expires_at'>) => b.
 /** Every traveller on a booking, with gender. Older bookings (before genders were asked) only have names. */
 export function travellersOf(b: Pick<Booking, 'name' | 'travellers' | 'passengers' | 'other_names'>): Traveller[] {
   const p = (b.passengers ?? []) as Passenger[]
-  if (p.length) return p.map((x, i) => ({ name: x.name, gender: x.gender, lead: i === 0 }))
+  if (p.length) return p.map((x, i) => ({ name: x.name, gender: x.gender, lead: i === 0, dob: x.dob, idChecked: x.id_checked }))
   // fallback: "Name (Male), Name (Female)" stored in other_names by the website before migration 005
   const others = (b.other_names ?? '').split(',').map((s) => s.trim()).filter(Boolean)
   const parsed = others.map((o) => {

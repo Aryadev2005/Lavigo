@@ -60,6 +60,7 @@ function back(path: string, kind: 'err' | 'ok', msg: string): never {
 }
 const missingFn = (e: { code?: string; message: string }) => e.code === 'PGRST202' || /could not find the function/i.test(e.message)
 const NEEDS_006 = 'This needs the latest database update. Run supabase/migrations/006_admin_console.sql in Supabase, then try again.'
+const NEEDS_008 = 'This needs the latest database update. Run supabase/migrations/008_accounts_reviews_blog.sql in Supabase, then try again.'
 
 const ERR: Record<string, string> = {
   seats_gone: 'Those seats have been taken by someone else since the hold lapsed. Free up seats or cancel this booking.',
@@ -98,7 +99,11 @@ const method = (v: FormDataEntryValue | null): PayMethod => (METHODS.includes(St
 function readPassengers(fd: FormData) {
   const names = fd.getAll('pax_name').map((v) => String(v).trim().replace(/\s+/g, ' ').slice(0, 80))
   const genders = fd.getAll('pax_gender').map((v) => String(v))
-  return names.map((name, i) => ({ name, gender: genders[i] as Gender })).filter((p) => p.name)
+  const dobs = fd.getAll('pax_dob').map((v) => String(v).trim())
+  const ids = fd.getAll('pax_id').map((v) => String(v) === 'yes')
+  return names
+    .map((name, i) => ({ name, gender: genders[i] as Gender, ...(/^\d{4}-\d{2}-\d{2}$/.test(dobs[i] || '') ? { dob: dobs[i] } : {}), ...(ids[i] ? { id_checked: true } : {}) }))
+    .filter((p) => p.name)
 }
 
 /* ───────────── bookings ───────────── */
@@ -235,10 +240,22 @@ export async function saveTrip(fd: FormData) {
       }
     })
   const faqs = json<{ q: string; a: string }[]>(fd.get('faqs_json'), []).filter((f) => f.q?.trim() && f.a?.trim()).map((f) => ({ q: f.q.trim(), a: f.a.trim() }))
+  const sb0 = adminClient()
+  // a brand-new place typed in the trip form: create the destination first
+  let destinationId = String(fd.get('destination_id') || '') || null
+  const newDest = text(fd.get('new_destination'), 60)
+  let createdDest = false
+  if (destinationId === 'new') {
+    if (newDest.length < 2) back(path, 'err', 'Type the name of the new destination, or pick one from the list.')
+    const { data: d, error: de } = await sb0.from('destinations').insert({ name: newDest, slug: slugify(newDest), area: text(fd.get('new_destination_area'), 80), default_nights: Math.max(1, nights), published: true }).select('id').single()
+    if (de) back(path, 'err', de.code === '23505' ? `A destination called "${newDest}" already exists. Pick it from the list.` : 'Could not create the destination: ' + de.message)
+    destinationId = d!.id as string
+    createdDest = true
+  }
   const row = {
     title,
     slug: slugify(String(fd.get('slug') || '') || title),
-    destination_id: String(fd.get('destination_id') || '') || null,
+    destination_id: destinationId,
     route: text(fd.get('route'), 200),
     summary: text(fd.get('summary'), 600),
     nights,
@@ -260,11 +277,36 @@ export async function saveTrip(fd: FormData) {
     good_to_know: json<{ title: string; text: string }[]>(fd.get('good_to_know_json'), []).filter((g) => g.title?.trim() && g.text?.trim()).map((g) => ({ title: g.title.trim().slice(0, 80), text: g.text.trim().slice(0, 600) })),
     things_to_carry: lines(fd.get('things_to_carry')).slice(0, 40),
   }
-  const sb = adminClient()
+  const tiers = ['budget', 'comfort', 'premium']
+  const extra = {
+    kind: fd.get('kind') === 'weekend' ? 'weekend' : 'group',
+    itinerary_pdf: cleanImage(fd.get('itinerary_pdf')),
+    hotels: json<Record<string, string>[]>(fd.get('trip_hotels_json'), [])
+      .filter((h) => h.name?.trim())
+      .map((h) => { const img = cleanImage(h.image); return { name: h.name.trim().slice(0, 80), place: (h.place || '').trim().slice(0, 60), tier: tiers.includes(h.tier) ? h.tier : 'comfort', stars: Math.min(5, Math.max(0, int(h.stars))), note: (h.note || '').trim().slice(0, 160), ...(img ? { image: img } : {}) } }),
+    cars: json<Record<string, string>[]>(fd.get('trip_cars_json'), [])
+      .filter((c) => c.name?.trim())
+      .map((c) => { const img = cleanImage(c.image); return { name: c.name.trim().slice(0, 80), kind: (c.kind || '').trim().slice(0, 40), seats: Math.min(60, Math.max(1, int(c.seats, 4))), note: (c.note || '').trim().slice(0, 160), ...(img ? { image: img } : {}) } }),
+  }
+  const sb = sb0
+  // photos of the place itself (the destination), edited from the trip form
+  const destFor = String(fd.get('dest_gallery_for') || '')
+  if (fd.has('dest_gallery_json') && destinationId && (destFor === destinationId || (createdDest && !destFor))) {
+    const g = cleanGallery(fd.get('dest_gallery_json'))
+    const upd: Record<string, unknown> = { gallery: g }
+    if (createdDest && g[0]) upd.hero_image = g[0].src
+    await sb.from('destinations').update(upd).eq('id', destinationId)
+  }
   const save = (r: object) => (id ? sb.from('trips').update(r).eq('id', id).select('id').single() : sb.from('trips').insert(r).select('id').single())
+  const col008 = (e: { message: string } | null) => !!e && /itinerary_pdf|hotels|cars|kind/.test(e.message) && /column/i.test(e.message)
   const storyColumnMissing = (e: { message: string } | null) => !!e && /story|highlights|good_to_know|things_to_carry|places/.test(e.message) && /column/i.test(e.message)
-  let res = await save({ ...row, gallery, ...story })
+  let res = await save({ ...row, gallery, ...story, ...extra })
   let note = id ? 'Trip saved. The website updates within a minute.' : 'Trip created. Now add its departure dates below.'
+  if (createdDest) note += ` New destination "${newDest}" created.`
+  if (res.error && col008(res.error)) {
+    res = await save({ ...row, gallery, ...story })
+    note = 'Saved, but the trip type, PDF itinerary, hotels and cars need the latest database update (008_accounts_reviews_blog.sql).'
+  }
   if (res.error && storyColumnMissing(res.error)) {
     res = await save({ ...row, gallery })
     note = 'Saved, but the story, places and good-to-know fields need the latest database update (007_trip_story.sql).'
@@ -322,6 +364,17 @@ export async function saveDeparture(fd: FormData) {
   const status = fd.get('status') === 'closed' ? 'closed' : 'open'
   const startCity = text(fd.get('start_city'), 60).replace(/\s+/g, ' ') || 'Ranchi'
   const sb = adminClient()
+  // the cab for this date (migration 008); only written when the form has the cab fields
+  if (id && fd.has('cab_vehicle')) {
+    const phone = String(fd.get('cab_phone') || '').replace(/\D/g, '').slice(-10)
+    const cabImg = cleanImage(fd.get('cab_image'))
+    const cab = Object.fromEntries(Object.entries({
+      vehicle: text(fd.get('cab_vehicle'), 80), number: text(fd.get('cab_number'), 20).toUpperCase(), driver: text(fd.get('cab_driver'), 60),
+      driver_phone: phone, pickup: text(fd.get('cab_pickup'), 160), note: text(fd.get('cab_note'), 300), image: cabImg ?? '',
+    }).filter(([, v]) => v))
+    const { error: ce } = await sb.from('departures').update({ cab }).eq('id', id)
+    if (ce && /cab/.test(ce.message) && /column/i.test(ce.message)) back(path, 'err', 'The cab details need the latest database update (008_accounts_reviews_blog.sql). Nothing was saved.')
+  }
   const noCityCol = (m: string) => /start_city/.test(m) && /column/i.test(m)
   if (id) {
     const { data: taken } = await sb.rpc('seats_taken', { p_departure: id })
@@ -379,10 +432,10 @@ export async function saveDestination(fd: FormData) {
   const tiers = ['budget', 'comfort', 'premium']
   const hotels = json<Record<string, string>[]>(fd.get('hotels_json'), [])
     .filter((h) => h.name?.trim())
-    .map((h) => ({ name: h.name.trim().slice(0, 80), place: (h.place || name).trim().slice(0, 60), tier: tiers.includes(h.tier) ? h.tier : 'comfort', stars: Math.min(5, Math.max(0, int(h.stars))), note: (h.note || '').trim().slice(0, 160) }))
+    .map((h) => { const img = cleanImage(h.image); return { name: h.name.trim().slice(0, 80), place: (h.place || name).trim().slice(0, 60), tier: tiers.includes(h.tier) ? h.tier : 'comfort', stars: Math.min(5, Math.max(0, int(h.stars))), note: (h.note || '').trim().slice(0, 160), ...(img ? { image: img } : {}) } })
   const cars = json<Record<string, string>[]>(fd.get('cars_json'), [])
     .filter((c) => c.name?.trim())
-    .map((c) => ({ name: c.name.trim().slice(0, 80), kind: (c.kind || '').trim().slice(0, 40), seats: Math.min(60, Math.max(1, int(c.seats, 4))), note: (c.note || '').trim().slice(0, 160) }))
+    .map((c) => { const img = cleanImage(c.image); return { name: c.name.trim().slice(0, 80), kind: (c.kind || '').trim().slice(0, 40), seats: Math.min(60, Math.max(1, int(c.seats, 4))), note: (c.note || '').trim().slice(0, 160), ...(img ? { image: img } : {}) } })
   const sb = adminClient()
   const save = (r: object) => (id ? sb.from('destinations').update(r).eq('id', id).select('id').single() : sb.from('destinations').insert(r).select('id').single())
   let res = await save({ ...row, hotels, cars })
@@ -415,6 +468,7 @@ export async function saveSite(fd: FormData) {
     topbar: text(fd.get('topbar'), 160),
     kicker: text(fd.get('kicker'), 80),
     headline: text(fd.get('headline'), 120),
+    intro: text(fd.get('intro'), 300),
     subline: text(fd.get('subline'), 240),
     photosTitle: text(fd.get('photosTitle'), 80),
     photosText: text(fd.get('photosText'), 200),
@@ -428,8 +482,19 @@ export async function saveSite(fd: FormData) {
   const ig = text(fd.get('instagram'), 200)
   if (ig && !/^https:\/\/(www\.)?instagram\.com\//.test(ig)) back(to, 'err', 'Paste the full Instagram link, starting with https://www.instagram.com/')
   const business = { email, gstin, address: text(fd.get('address'), 240), instagram: ig }
+  const about = {
+    title: text(fd.get('about_title'), 120),
+    intro: text(fd.get('about_intro'), 400),
+    story: String(fd.get('about_story') || '').trim().replace(/\r\n/g, '\n').slice(0, 6000),
+    founderName: text(fd.get('founder_name'), 80),
+    founderRole: text(fd.get('founder_role'), 120),
+    founderPhoto: cleanImage(fd.get('founder_photo')) ?? '',
+    founderBio: String(fd.get('founder_bio') || '').trim().replace(/\r\n/g, '\n').slice(0, 2000),
+    values: json<{ title: string; text: string }[]>(fd.get('values_json'), []).filter((v) => v.title?.trim()).map((v) => ({ title: v.title.trim().slice(0, 60), text: (v.text || '').trim().slice(0, 240) })).slice(0, 8),
+    photos: cleanGallery(fd.get('about_photos_json')).slice(0, 8),
+  }
   const now = new Date().toISOString()
-  const { error } = await adminClient().from('site_settings').upsert([{ key: 'home', value: home, updated_at: now }, { key: 'business', value: business, updated_at: now }])
+  const { error } = await adminClient().from('site_settings').upsert([{ key: 'home', value: home, updated_at: now }, { key: 'business', value: business, updated_at: now }, { key: 'about', value: about, updated_at: now }])
   if (error) back(to, 'err', /site_settings/.test(error.message) ? NEEDS_006 : 'Could not save: ' + error.message)
   refresh(); back(to, 'ok', 'Site content saved. The website updates within a minute.')
 }
@@ -447,4 +512,114 @@ export async function uploadImage(fd: FormData): Promise<{ url?: string; error?:
   const { error } = await sb.storage.from('media').upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, cacheControl: '31536000' })
   if (error) return { error: 'Upload failed: ' + error.message }
   return { url: sb.storage.from('media').getPublicUrl(path).data.publicUrl }
+}
+
+
+/* ───────────── PDFs and videos: the browser uploads straight to Storage with a signed link ───────────── */
+const FILE_TYPES: Record<string, { ext: string; max: number }> = {
+  'application/pdf': { ext: 'pdf', max: 25 * 1024 * 1024 },
+  'video/mp4': { ext: 'mp4', max: 200 * 1024 * 1024 },
+  'video/quicktime': { ext: 'mov', max: 200 * 1024 * 1024 },
+  'video/webm': { ext: 'webm', max: 200 * 1024 * 1024 },
+}
+export async function signUpload(type: string, size: number): Promise<{ upload?: string; url?: string; error?: string }> {
+  if (!(await getAdmin())) return { error: 'Please sign in again.' }
+  const t = FILE_TYPES[type]
+  if (!t) return { error: 'Use a PDF, or an MP4 / MOV / WebM video.' }
+  if (!(size > 0) || size > t.max) return { error: `That file is too large (max ${Math.round(t.max / 1048576)} MB).` }
+  const path = `${t.ext === 'pdf' ? 'itineraries' : 'videos'}/${new Date().getFullYear()}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${t.ext}`
+  const sb = adminClient()
+  const { data, error } = await sb.storage.from('media').createSignedUploadUrl(path)
+  if (error || !data) return { error: 'Could not start the upload: ' + (error?.message ?? 'unknown error') }
+  return { upload: data.signedUrl, url: sb.storage.from('media').getPublicUrl(path).data.publicUrl }
+}
+
+/* ───────────── a personal itinerary for one booking ───────────── */
+export async function setBookingItinerary(fd: FormData) {
+  await requireAdmin()
+  const id = String(fd.get('booking_id') || '')
+  const to = backTo(fd, '/admin/bookings')
+  const url = cleanImage(fd.get('itinerary_url'))
+  const { error } = await adminClient().from('bookings').update({ itinerary_url: url }).eq('id', id)
+  if (error) back(to, 'err', /itinerary_url/.test(error.message) ? NEEDS_008 : 'Could not save: ' + error.message)
+  back(to, 'ok', url ? 'Itinerary saved. The traveller can download it from their booking and My trips.' : 'Personal itinerary removed. The trip itinerary is shown instead.')
+}
+
+/* ───────────── reviews ───────────── */
+export async function moderateReview(fd: FormData) {
+  await requireAdmin()
+  const id = String(fd.get('id') || '')
+  const to = backTo(fd, '/admin/reviews')
+  const status = String(fd.get('status') || '')
+  const patch: Record<string, unknown> = {}
+  if (['pending', 'approved', 'hidden'].includes(status)) patch.status = status
+  if (fd.has('reply')) patch.reply = text(fd.get('reply'), 1000)
+  const { error } = await adminClient().from('reviews').update(patch).eq('id', id)
+  if (error) back(to, 'err', /reviews/.test(error.message) ? NEEDS_008 : 'Could not save: ' + error.message)
+  refresh()
+  back(to, 'ok', status === 'approved' ? 'Review approved. It is now on the website.' : status === 'hidden' ? 'Review hidden from the website.' : 'Review saved.')
+}
+export async function deleteReview(fd: FormData) {
+  await requireAdmin()
+  const { error } = await adminClient().from('reviews').delete().eq('id', String(fd.get('id') || ''))
+  if (error) back('/admin/reviews', 'err', 'Could not delete: ' + error.message)
+  refresh(); back('/admin/reviews', 'ok', 'Review deleted.')
+}
+
+/* ───────────── enquiries ───────────── */
+export async function updateEnquiry(fd: FormData) {
+  await requireAdmin()
+  const id = String(fd.get('id') || '')
+  const to = backTo(fd, '/admin/enquiries')
+  const status = String(fd.get('status') || '')
+  const patch: Record<string, unknown> = {}
+  if (['new', 'replied', 'closed'].includes(status)) patch.status = status
+  if (fd.has('admin_note')) patch.admin_note = text(fd.get('admin_note'), 1000)
+  const { error } = await adminClient().from('enquiries').update(patch).eq('id', id)
+  if (error) back(to, 'err', /enquiries/.test(error.message) ? NEEDS_008 : 'Could not save: ' + error.message)
+  back(to, 'ok', 'Enquiry updated.')
+}
+
+/* ───────────── blog ───────────── */
+export async function savePost(fd: FormData) {
+  await requireAdmin()
+  const id = String(fd.get('id') || '')
+  const path = id ? `/admin/blog/${id}` : '/admin/blog/new'
+  const title = text(fd.get('title'), 140)
+  if (title.length < 3) back(path, 'err', 'Give the story a title.')
+  const media = json<{ type: string; src: string; poster?: string; caption?: string }[]>(fd.get('media_json'), [])
+    .map((m) => {
+      const src = cleanImage(m.src)
+      const poster = cleanImage(m.poster)
+      return src ? { type: m.type === 'video' || /\.(mp4|mov|webm)$/i.test(src) ? 'video' : 'photo', src, ...(poster ? { poster } : {}), caption: text(m.caption ?? '', 300) } : null
+    })
+    .filter(Boolean)
+    .slice(0, 60)
+  const published = fd.get('published') === 'on'
+  const date = String(fd.get('published_at') || '')
+  const row = {
+    title,
+    slug: slugify(String(fd.get('slug') || '') || title),
+    excerpt: text(fd.get('excerpt'), 400),
+    cover: cleanImage(fd.get('cover')),
+    body: String(fd.get('body') || '').trim().replace(/\r\n/g, '\n').slice(0, 30000),
+    media,
+    place: text(fd.get('place'), 80),
+    trip_id: String(fd.get('trip_id') || '') || null,
+    published,
+    published_at: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : published ? new Date().toISOString().slice(0, 10) : null,
+    updated_at: new Date().toISOString(),
+  }
+  if (!row.slug) back(path, 'err', 'The web address (slug) cannot be empty.')
+  const sb = adminClient()
+  const res = id ? await sb.from('posts').update(row).eq('id', id).select('id').single() : await sb.from('posts').insert(row).select('id').single()
+  if (res.error) back(path, 'err', res.error.code === '23505' ? 'Another story already uses that web address.' : /posts/.test(res.error.message) ? NEEDS_008 : 'Could not save: ' + res.error.message)
+  refresh()
+  back(`/admin/blog/${res.data!.id}`, 'ok', published ? 'Story saved and live on the website.' : 'Draft saved. Tick "Publish" when it is ready.')
+}
+export async function deletePost(fd: FormData) {
+  await requireAdmin()
+  const { error } = await adminClient().from('posts').delete().eq('id', String(fd.get('id') || ''))
+  if (error) back('/admin/blog', 'err', 'Could not delete: ' + error.message)
+  refresh(); back('/admin/blog', 'ok', 'Story deleted.')
 }

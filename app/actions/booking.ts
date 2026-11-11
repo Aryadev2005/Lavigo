@@ -3,7 +3,8 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { adminClient, writesConfigured } from '@/lib/supabase'
-import { HOLD_HOURS } from '@/lib/config'
+import { CHILD_FACTOR, CHILD_MAX_AGE, HOLD_HOURS } from '@/lib/config'
+import { getCustomer, saveProfile } from '@/lib/customer'
 import type { Gender, Passenger, TicketBy } from '@/lib/types'
 
 export type ReserveState = { error?: string }
@@ -26,6 +27,9 @@ const MESSAGES: Record<string, string> = {
   bad_gender: 'Please choose male or female for every traveller.',
   bad_ticket_by: 'Please choose who books the train or flight tickets.',
   departure_not_found: 'That departure is no longer available.',
+  bad_dob: 'Please enter a real date of birth for every traveller.',
+  adult_required: `At least one traveller must be an adult (over ${CHILD_MAX_AGE}).`,
+  sign_in_required: 'Please sign in to book.',
 }
 
 export async function reserveSeats(_prev: ReserveState, fd: FormData): Promise<ReserveState> {
@@ -33,11 +37,15 @@ export async function reserveSeats(_prev: ReserveState, fd: FormData): Promise<R
   if (String(fd.get('website') || '').trim()) return { error: 'Something went wrong. Please try again.' }
   if (!writesConfigured) return { error: 'Online booking is not switched on yet. Please message us on WhatsApp to book.' }
 
+  const me = await getCustomer()
+  if (!me) return { error: 'Please sign in to book. Your session may have expired.' }
+
   const departureId = String(fd.get('departure_id') || '')
   const phone = cleanPhone(String(fd.get('phone') || ''))
-  const email = String(fd.get('email') || '').trim()
+  const email = me.email
   const names = fd.getAll('pax_name').map((v) => String(v).trim().replace(/\s+/g, ' ').slice(0, 80))
   const genders = fd.getAll('pax_gender').map((v) => String(v))
+  const dobs = fd.getAll('pax_dob').map((v) => String(v).trim())
   const ticketBy: TicketBy = fd.get('ticket_by') === 'self' ? 'self' : 'agency'
   const fromCity = ticketBy === 'agency' ? String(fd.get('from_city') || '').trim().slice(0, 60) : ''
 
@@ -45,13 +53,28 @@ export async function reserveSeats(_prev: ReserveState, fd: FormData): Promise<R
   if (!names.length || names.length > 20 || genders.length !== names.length) return { error: MESSAGES.bad_travellers }
   if (names.some((x) => x.length < 2)) return { error: 'Please enter the full name of every traveller.' }
   if (genders.some((g) => g !== 'male' && g !== 'female')) return { error: MESSAGES.bad_gender }
+  const todayIso = new Date().toISOString().slice(0, 10)
+  if (dobs.length !== names.length || dobs.some((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d) || d > todayIso || d < '1910-01-01')) return { error: MESSAGES.bad_dob }
   if (ticketBy === 'agency' && fromCity.length < 2) return { error: 'Tell us which city you are travelling from, so we can book your tickets.' }
   if (!/^[6-9]\d{9}$/.test(phone)) return { error: MESSAGES.bad_phone }
-  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: 'That email address does not look right.' }
 
-  const passengers: Passenger[] = names.map((name, i) => ({ name, gender: genders[i] as Gender }))
+  const passengers: Passenger[] = names.map((name, i) => ({ name, gender: genders[i] as Gender, dob: dobs[i] }))
   const sb = adminClient()
-  let { data, error } = await sb.rpc('create_hold_v2', {
+  let { data, error } = await sb.rpc('create_hold_v3', {
+    p_departure: departureId,
+    p_user: me.id,
+    p_phone: phone,
+    p_email: email || null,
+    p_passengers: passengers,
+    p_ticket_by: ticketBy,
+    p_from_city: fromCity || null,
+    p_hold_minutes: HOLD_HOURS * 60,
+    p_child_max_age: CHILD_MAX_AGE,
+    p_child_factor: CHILD_FACTOR,
+  })
+  const missing = (e: typeof error) => Boolean(e && (e.code === 'PGRST202' || /could not find the function/i.test(e.message)))
+  // Before migration 008 there is no create_hold_v3 (no accounts or ages in the database yet): use v2.
+  if (missing(error)) ({ data, error } = await sb.rpc('create_hold_v2', {
     p_departure: departureId,
     p_phone: phone,
     p_email: email || null,
@@ -59,11 +82,11 @@ export async function reserveSeats(_prev: ReserveState, fd: FormData): Promise<R
     p_ticket_by: ticketBy,
     p_from_city: fromCity || null,
     p_hold_minutes: HOLD_HOURS * 60,
-  })
+  }))
 
   // Before migration 005 is run there is no create_hold_v2: fall back to the original
   // function and keep the travellers, genders and ticket choice in the notes field.
-  if (error && (error.code === 'PGRST202' || /could not find the function/i.test(error.message))) {
+  if (missing(error)) {
     const label = (p: Passenger) => `${p.name} (${p.gender === 'male' ? 'Male' : 'Female'})`
     const notes = [
       `Travellers: ${passengers.map(label).join(', ')}`,
@@ -94,6 +117,7 @@ export async function reserveSeats(_prev: ReserveState, fd: FormData): Promise<R
   }
 
   const code = (data as { code: string }).code
+  if (!me.phone || !me.name) await saveProfile({ id: me.id, email: me.email, ...(me.name ? {} : { name: names[0] }), ...(me.phone ? {} : { phone }) })
   revalidatePath('/', 'layout') // refresh seat counts everywhere
   redirect(`/booking/${code}`)
 }

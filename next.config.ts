@@ -19,6 +19,8 @@ const config: NextConfig = {
     minimumCacheTTL: 31536000, // photos rarely change; cache optimised copies for a year
     // Photos uploaded from the admin panel live in Supabase Storage
     remotePatterns: supabaseHost ? [{ protocol: supabaseProto, hostname: supabaseHost, pathname: '/storage/v1/object/public/**' }] : [],
+    // only when Supabase itself runs on this machine (local testing); never true for the hosted project
+    dangerouslyAllowLocalIP: supabaseHost === 'localhost' || supabaseHost === '127.0.0.1',
   },
   poweredByHeader: false,
   // photo uploads from /admin (browser downsizes to ~1600px first; Vercel's hard cap is 4.5 MB)

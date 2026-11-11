@@ -5,6 +5,7 @@ import { FooterGate } from '@/components/FooterGate'
 import { Header } from '@/components/Header'
 import { JsonLd } from '@/components/JsonLd'
 import { SmoothScroll } from '@/components/Lenis'
+import { WhatsAppFab } from '@/components/WhatsAppFab'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getSite } from '@/lib/site'
 import 'lenis/dist/lenis.css'
@@ -12,8 +13,10 @@ import './globals.css'
 import './mmt.css'
 import './lavigo.css'
 import './premium.css'
+import './theme.css'
 
-const outfit = localFont({ src: './fonts/outfit-latin.woff2', variable: '--font-outfit', display: 'swap', weight: '100 900' })
+// Body text is Plus Jakarta Sans. It keeps the old --font-outfit variable name so every existing rule picks it up.
+const outfit = localFont({ src: './fonts/jakarta-latin.woff2', variable: '--font-outfit', display: 'swap', weight: '200 800' })
 // Display serif. The weight range is capped at 600 so headings stay elegant even where older CSS asks for 800-900.
 const fraunces = localFont({
   src: [
@@ -37,7 +40,7 @@ export const metadata: Metadata = {
   robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
   alternates: { canonical: '/' },
 }
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#221944' }
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F4EEFD' }
 
 const agency = {
   '@context': 'https://schema.org',
@@ -67,6 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Header topbar={home.topbar} instagram={business.instagram} />
         <main id="main">{children}</main>
         <FooterGate><Footer /></FooterGate>
+        <WhatsAppFab />
       </body>
     </html>
   )

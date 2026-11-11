@@ -9,10 +9,14 @@ const ITEMS: { href: string; label: string; icon: IconName; exact?: boolean }[] 
   { href: '/admin/departures', label: 'Departures', icon: 'calendar' },
   { href: '/admin/trips', label: 'Trips', icon: 'route' },
   { href: '/admin/destinations', label: 'Destinations', icon: 'globe' },
-  { href: '/admin/site', label: 'Site content', icon: 'image' },
+  { href: '/admin/enquiries', label: 'Enquiries', icon: 'chat' },
+  { href: '/admin/reviews', label: 'Reviews', icon: 'star' },
+  { href: '/admin/customers', label: 'Customers', icon: 'user' },
+  { href: '/admin/blog', label: 'Travel stories', icon: 'vlog' },
+  { href: '/admin/site', label: 'Site & About', icon: 'image' },
 ]
 
-export function AdminNav({ holds }: { holds: number }) {
+export function AdminNav({ holds, reviews = 0, enquiries = 0 }: { holds: number; reviews?: number; enquiries?: number }) {
   const path = usePathname()
   return (
     <nav className="ad-nav" aria-label="Admin">
@@ -22,6 +26,8 @@ export function AdminNav({ holds }: { holds: number }) {
           <Link key={it.href} href={it.href} className={on ? 'on' : undefined} aria-current={on ? 'page' : undefined}>
             <Icon name={it.icon} size={19} /><span className="t">{it.label}</span>
             {it.href === '/admin/bookings' && holds > 0 && <span className="cnt" title={`${holds} on hold, waiting for payment`}>{holds}</span>}
+            {it.href === '/admin/enquiries' && enquiries > 0 && <span className="cnt" title={`${enquiries} new`}>{enquiries}</span>}
+            {it.href === '/admin/reviews' && reviews > 0 && <span className="cnt" title={`${reviews} waiting for approval`}>{reviews}</span>}
           </Link>
         )
       })}

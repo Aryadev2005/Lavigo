@@ -56,18 +56,18 @@ export default async function DestinationEditor({ params, searchParams }: { para
         <section className="card pane" id="hotels">
           <h2 className="ad-h2">Hotels</h2>
           <p className="ad-sub">Listed on trip pages, in the PDF itinerary, and in the planner for the stay type the customer picks. Use the real names of the hotels you book.</p>
-          <RowsEditor name="hotels_json" addLabel="Add a hotel" itemLabel="Hotel" initial={(d?.hotels ?? []).map((h) => ({ name: h.name, place: h.place, tier: h.tier, stars: String(h.stars ?? ''), note: h.note ?? '' }))}
+          <RowsEditor name="hotels_json" addLabel="Add a hotel" itemLabel="Hotel" initial={(d?.hotels ?? []).map((h) => ({ name: h.name, place: h.place, tier: h.tier, stars: String(h.stars ?? ''), note: h.note ?? '', image: h.image ?? '' }))}
             fields={[{ key: 'name', label: 'Hotel name', placeholder: 'Hotel Lake View' }, { key: 'place', label: 'Town', placeholder: 'Pokhara' },
               { key: 'tier', label: 'Stay type', type: 'select', options: [['budget', 'Budget'], ['comfort', 'Comfort'], ['premium', 'Premium']] }, { key: 'stars', label: 'Stars', type: 'number' },
-              { key: 'note', label: 'One line about it', type: 'textarea', placeholder: 'Lake-view rooms, 5 minutes to the boating point' }]} />
+              { key: 'note', label: 'One line about it', type: 'textarea', placeholder: 'Lake-view rooms, 5 minutes to the boating point' }, { key: 'image', label: 'Photo (optional)', type: 'image' }]} />
         </section>
 
         <section className="card pane" id="cars">
           <h2 className="ad-h2">Cars</h2>
           <p className="ad-sub">Vehicles used here. The planner suggests the ones that fit the group size.</p>
-          <RowsEditor name="cars_json" addLabel="Add a car" itemLabel="Car" initial={(d?.cars ?? []).map((c) => ({ name: c.name, kind: c.kind, seats: String(c.seats ?? ''), note: c.note ?? '' }))}
+          <RowsEditor name="cars_json" addLabel="Add a car" itemLabel="Car" initial={(d?.cars ?? []).map((c) => ({ name: c.name, kind: c.kind, seats: String(c.seats ?? ''), note: c.note ?? '', image: c.image ?? '' }))}
             fields={[{ key: 'name', label: 'Car', placeholder: 'Toyota Innova Crysta' }, { key: 'kind', label: 'Type', placeholder: 'SUV' }, { key: 'seats', label: 'Seats', type: 'number' },
-              { key: 'note', label: 'Used for', type: 'textarea', placeholder: 'Airport pick-up and sightseeing' }]} />
+              { key: 'note', label: 'Used for', type: 'textarea', placeholder: 'Airport pick-up and sightseeing' }, { key: 'image', label: 'Photo (optional)', type: 'image' }]} />
         </section>
 
         <section className="card pane" id="rates">

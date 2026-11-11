@@ -31,6 +31,7 @@ export default async function Trips() {
       destName: t.destination?.name ?? t.title,
       chips: [c.stay ? 'Hotels' : null, c.travel, c.meals].filter((x): x is string => !!x),
       highlights: t.itinerary.slice(1, 3).map((d) => d.highlights?.[0] || d.text || '').filter(Boolean),
+      weekend: t.kind === 'weekend',
     }
     if (!t.departures.length) return [{ ...base, key: t.id, date: null, price: null, seatsLeft: 0, seatsTotal: 0, startCity: null }]
     return t.departures.map((d) => ({ ...base, key: d.id, date: d.depart_date, price: d.price, seatsLeft: d.seats_left, seatsTotal: d.seats_total, startCity: d.start_city }))

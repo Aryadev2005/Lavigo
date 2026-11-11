@@ -3,11 +3,13 @@ import Link from 'next/link'
 import { Art } from '@/components/Art'
 import type { DepartureCardData } from '@/components/DepartureCard'
 import { PhotoWall } from '@/components/Gallery'
-import { HeroLogoIntro } from '@/components/HeroLogoIntro'
+import { Accent, FallingLeaves, HeroScene } from '@/components/HeroScene'
 import { Icon, type IconName } from '@/components/Icons'
 import { HomeSearch } from '@/components/HomeSearch'
 import { JsonLd } from '@/components/JsonLd'
 import { Moments } from '@/components/Moments'
+import { ReviewStrip } from '@/components/Reviews'
+import { getReviews } from '@/lib/content'
 import { UpcomingDepartures } from '@/components/UpcomingDepartures'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
@@ -28,7 +30,7 @@ const TRUST: { t: string; s: string; c: 'lav' | 'sun'; i: IconName }[] = [
 ]
 
 export default async function Home() {
-  const [dests, trips, site] = await Promise.all([getDestinations(), getTrips(), getSite()])
+  const [dests, trips, site, reviews] = await Promise.all([getDestinations(), getTrips(), getSite(), getReviews(3)])
   const { home, business } = site
   const FAQ = home.faqs
   const headLines = home.headline.split('\n').map((l) => l.trim()).filter(Boolean)
@@ -53,27 +55,30 @@ export default async function Home() {
   const tripFor = (slug: string) => withDeps.find((t) => t.destination?.slug === slug) ?? trips.find((t) => t.destination?.slug === slug)
 
   return (
-    <div className="m-page">
+    <div className="m-page lv-home">
       <JsonLd data={{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }} />
       <JsonLd data={{ '@context': 'https://schema.org', '@type': 'WebSite', url: SITE_URL, name: BUSINESS.name }} />
 
-      <section className="m-hero">
-        <HeroLogoIntro />
-        <span className="m-hero-shade" />
-        <div className="m-wrap m-hero-in">
-          <div className="m-hero-top">
-            <div>
-              <p className="m-kicker">{home.kicker}</p>
-              <h1 className="m-hero-h">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}{l}</span>)}</h1>
-            </div>
-            <Link href="/#moments" className="m-reel-btn">
-              <span aria-hidden="true"><Icon name="play" size={16} /></span>
-              Watch trip moments
-            </Link>
+      <FallingLeaves />
+      <section className="lv-hero">
+        <HeroScene />
+        <div className="m-wrap lv-hero-in">
+          <p className="lv-badge"><span aria-hidden="true" />{home.kicker}</p>
+          <h1 className="lv-h">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}<Accent text={l} /></span>)}</h1>
+          <p className="lv-intro">{home.intro}</p>
+          <div className="lv-ctas">
+            <Link href="/trips" className="lv-pill">Explore trips <span aria-hidden="true"><Icon name="arrow" size={16} /></span></Link>
+            <Link href="/plan" className="lv-pill lv-pill-ghost">Plan a custom trip <span aria-hidden="true"><Icon name="route" size={16} /></span></Link>
           </div>
-          <HomeSearch destinations={dests.map((d) => ({ slug: d.slug, name: d.name, area: d.area }))} departures={departures} minDate={minDate} />
+          <a href="#search" className="lv-mouse" aria-label="Scroll to search"><span /></a>
         </div>
+        <svg className="lv-edge" viewBox="0 0 1600 90" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <path d="M0 90 L0 52 L90 30 L170 58 L260 18 L350 50 L430 34 L520 64 L610 26 L700 56 L790 40 L880 66 L970 22 L1060 54 L1150 36 L1240 62 L1330 28 L1420 56 L1510 38 L1600 58 L1600 90 Z" />
+        </svg>
       </section>
+      <div className="m-wrap lv-search" id="search">
+        <HomeSearch destinations={dests.map((d) => ({ slug: d.slug, name: d.name, area: d.area }))} departures={departures} minDate={minDate} />
+      </div>
 
       <section className="m-sec" style={{ paddingTop: 64 }}>
         <div className="m-wrap">
@@ -165,6 +170,10 @@ export default async function Home() {
             <div className="m-card m-step"><span>03</span><h3>Confirm on WhatsApp</h3><p>Pay the 25% advance on WhatsApp and we confirm. The balance is due before you travel.</p></div>
           </div>
         </div>
+      </section>
+
+      <section className="m-sec" id="reviews">
+        <div className="m-wrap"><ReviewStrip reviews={reviews} sub="Real reviews from travellers with a Lavigo account." /></div>
       </section>
 
       <section className="m-sec" id="about" style={{ paddingBottom: 64 }}>

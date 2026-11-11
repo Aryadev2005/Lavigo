@@ -10,7 +10,7 @@ html{scroll-behavior:smooth}
 body{font-family:var(--font-outfit),Outfit,system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer}
-input,select,textarea{font:500 16px Outfit,sans-serif;color:var(--text)}
+input,select,textarea{font:500 16px var(--font-outfit),sans-serif;color:var(--text)}
 .wrap{max-width:1120px;margin:0 auto;padding:0 16px}
 .proto{background:#FFF4D6;color:#6B4A00;font-size:12.5px;text-align:center;padding:6px 16px}
 
@@ -29,7 +29,7 @@ header.top img{height:32px;display:block}
 }
 
 /* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:13px 20px;font:600 16px Outfit,sans-serif;transition:transform .12s,box-shadow .12s,background .12s;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:13px 20px;font:600 16px var(--font-outfit),sans-serif;transition:transform .12s,box-shadow .12s,background .12s;white-space:nowrap}
 .btn:active{transform:scale(.98)}
 .b-main{background:var(--ink);color:#fff}.b-main:hover{background:var(--ink3)}
 .b-lav{background:var(--lav);color:var(--ink)}
@@ -384,7 +384,7 @@ body .home-page h2{font-family:var(--font-italiana),Italiana,serif;font-weight:4
 .tl.bad .dotc{background:var(--bad);border-color:var(--bad);color:#fff}
 .sold{background:#FDECEA;color:var(--bad)}
 .crumbs{font-size:13px;color:var(--muted);padding:14px 0 0}.crumbs a{text-decoration:underline}
-.codebox{font:800 28px Outfit,sans-serif;letter-spacing:.08em;background:var(--lav3);border:2px dashed var(--lav);border-radius:14px;padding:12px 18px;display:inline-block}
+.codebox{font:800 28px var(--font-outfit),sans-serif;letter-spacing:.08em;background:var(--lav3);border:2px dashed var(--lav);border-radius:14px;padding:12px 18px;display:inline-block}
 
 /* ===== admin ===== */
 .adm{padding:20px 0 60px}

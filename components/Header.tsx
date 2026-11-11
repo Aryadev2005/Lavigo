@@ -2,24 +2,32 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BUSINESS } from '@/lib/config'
 import { waLink } from '@/lib/whatsapp'
 import { Icon, WhatsAppGlyph, type IconName } from './Icons'
+import { useMe } from './useMe'
 
-const tabs: { href: string; label: string; icon: IconName; match: (p: string) => boolean }[] = [
-  { href: '/trips', label: 'Group Trips', icon: 'group', match: (p) => p.startsWith('/trips') },
+const tabs: { href: string; label: string; icon: IconName; match: (p: string, q: string) => boolean }[] = [
+  { href: '/', label: 'Home', icon: 'grid', match: (p) => p === '/' },
+  { href: '/trips', label: 'Group Trips', icon: 'group', match: (p, q) => p.startsWith('/trips') && !q.includes('weekend') },
+  { href: '/trips?d=weekend', label: 'Weekend', icon: 'weekend', match: (p, q) => p.startsWith('/trips') && q.includes('weekend') },
   { href: '/plan', label: 'Custom Trip', icon: 'route', match: (p) => p.startsWith('/plan') },
-  { href: '/trips?d=weekend', label: 'Weekend', icon: 'weekend', match: () => false },
-  { href: '/#destinations', label: 'Destinations', icon: 'globe', match: () => false },
-  { href: '/#moments', label: 'Trip Vlogs', icon: 'vlog', match: () => false },
-  { href: '/#about', label: 'About Us', icon: 'shield', match: () => false },
+  { href: '/blog', label: 'Travel Stories', icon: 'vlog', match: (p) => p.startsWith('/blog') },
+  { href: '/reviews', label: 'Reviews', icon: 'star', match: (p) => p.startsWith('/reviews') },
+  { href: '/about', label: 'About Us', icon: 'shield', match: (p) => p.startsWith('/about') },
 ]
 
 export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: string; instagram?: string }) {
   const path = usePathname()
   const head = useRef<HTMLElement>(null)
-  // Publish the live header height so sticky sub-bars and anchor scrolling can sit flush beneath it.
+  const [q, setQ] = useState('')
+  const [scrolled, setScrolled] = useState(false)
+  const [open, setOpen] = useState(false)
+  const me = useMe()
+  const home = path === '/'
+
+  // Publish the live header height so sticky sub-bars, anchor scrolling and the home hero can sit flush beneath it.
   useEffect(() => {
     const el = head.current
     if (!el) return
@@ -29,7 +37,16 @@ export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: st
     ro.observe(el)
     return () => ro.disconnect()
   }, [path])
+  useEffect(() => { setQ(window.location.search); setOpen(false) }, [path])
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 40)
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
+
   if (path.startsWith('/admin') || path.endsWith('/itinerary')) return null
+  const clear = home && !scrolled && !open // see-through over the home hero until you scroll
   return (
     <>
       <div className="m-util">
@@ -41,27 +58,33 @@ export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: st
           </span>
         </div>
       </div>
-      <header className="m-head" ref={head}>
+      <header className={'m-head lv-head' + (clear ? ' is-clear' : '') + (open ? ' is-open' : '')} ref={head}>
         <div className="m-wrap">
           <Link href="/" className="m-logo" aria-label="Lavigo Travel Co. home">
-            <Image src="/img/logo-white.webp" alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 30, width: 'auto' }} />
+            <Image src={clear ? '/img/logo-white.webp' : '/img/logo-ink.webp'} alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 30, width: 'auto' }} />
           </Link>
-          <nav className="m-tabs" aria-label="Main">
-            {tabs.map((t) => (
-              <Link key={t.label} href={t.href} className={t.match(path) ? 'on' : undefined} aria-current={t.match(path) ? 'page' : undefined}>
-                <span className="m-tab-ic"><Icon name={t.icon} /></span>{t.label}
-              </Link>
-            ))}
+          <nav className="m-tabs" aria-label="Main" id="main-nav">
+            {tabs.map((t) => {
+              const on = t.match(path, q)
+              return (
+                <Link key={t.label} href={t.href} className={on ? 'on' : undefined} aria-current={on ? 'page' : undefined}>
+                  <span className="m-tab-ic"><Icon name={t.icon} /></span>{t.label}
+                </Link>
+              )
+            })}
           </nav>
           <div className="m-acts">
-            <Link href="/my-bookings" className="m-btn-line">
-              <Icon name="ticket" size={20} />
-              <span>My Bookings</span>
-            </Link>
-            <a href={waLink()} target="_blank" rel="noopener" className="m-btn-ink" aria-label="WhatsApp us">
-              <WhatsAppGlyph />
-              <span>WhatsApp us</span>
+            {me.loading ? <span className="lv-acct-skel" aria-hidden="true" />
+              : me.user
+                ? <Link href="/account" className="lv-acct" title={me.user.email}><span className="lv-avatar" aria-hidden="true">{(me.user.name || me.user.email || '?').slice(0, 1).toUpperCase()}</span><span>My trips</span></Link>
+                : <Link href={`/login?next=${encodeURIComponent(path)}`} className="lv-acct"><Icon name="user" size={18} /><span>Sign in</span></Link>}
+            <a href={waLink()} target="_blank" rel="noopener" className="lv-cta" aria-label="Plan a trip on WhatsApp">
+              <span className="lv-cta-t">Plan a trip</span>
+              <span className="lv-cta-i"><WhatsAppGlyph /></span>
             </a>
+            <button type="button" className="lv-burger" aria-expanded={open} aria-controls="main-nav" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen((o) => !o)}>
+              <span /><span /><span />
+            </button>
           </div>
         </div>
       </header>

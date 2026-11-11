@@ -26,13 +26,14 @@ export type Row = {
   startCity: string | null
   chips: string[]
   highlights: string[]
+  weekend?: boolean
 }
 
 type Sort = 'soon' | 'low' | 'high'
 const DUR = [
-  { id: 'weekend', label: 'Weekend (2–3 days)', test: (n: number) => n <= 2 },
-  { id: 'mid', label: '4–5 days', test: (n: number) => n >= 3 && n <= 4 },
-  { id: 'long', label: '6+ days', test: (n: number) => n >= 5 },
+  { id: 'weekend', label: 'Weekend (2–3 days)', test: (n: number, w?: boolean) => Boolean(w) || n <= 2 },
+  { id: 'mid', label: '4–5 days', test: (n: number, w?: boolean) => !w && n >= 3 && n <= 4 },
+  { id: 'long', label: '6+ days', test: (n: number, w?: boolean) => !w && n >= 5 },
 ]
 const BUD = [
   { id: 'b1', label: 'Under ₹10,000', test: (p: number) => p < 10000 },
@@ -73,7 +74,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
   const preMonth = rows
     .filter((r) => !dests.length || dests.includes(r.dest))
     .filter((r) => !froms.length || (r.startCity !== null && froms.includes(r.startCity)))
-    .filter((r) => !durs.length || DUR.some((d) => durs.includes(d.id) && d.test(r.nights)))
+    .filter((r) => !durs.length || DUR.some((d) => durs.includes(d.id) && d.test(r.nights, r.weekend)))
     .filter((r) => !buds.length || (r.price !== null && BUD.some((b) => buds.includes(b.id) && b.test(r.price!))))
   const months = monthsFromDates(preMonth.map((r) => r.date).filter((d): d is string => !!d))
 
@@ -173,7 +174,7 @@ export function TripsBrowser({ rows }: { rows: Row[] }) {
                       </>
                     ) : <div className="m-sm m-muted" style={{ marginTop: 8 }}>Next dates soon</div>}
                   </div>
-                  <Link href={`/trips/${r.slug}`} className="m-btn-sun m-block">View details</Link>
+                  <Link href={`/trips/${r.slug}`} className="m-btn-sun m-block">Book now</Link>
                 </div>
               </article>
             ))}

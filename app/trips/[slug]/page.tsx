@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Art } from '@/components/Art'
 import { BookingForm } from '@/components/BookingForm'
+import { EnquiryForm } from '@/components/EnquiryForm'
+import { ReviewCard, Stars } from '@/components/Reviews'
 import { GalleryGrid } from '@/components/Gallery'
 import { Icon, WhatsAppGlyph } from '@/components/Icons'
 import { ItineraryTimeline } from '@/components/ItineraryTimeline'
@@ -11,6 +13,7 @@ import { JsonLd } from '@/components/JsonLd'
 import { SectionTabs } from '@/components/SectionTabs'
 import { seatLabel, tripChips } from '@/components/TripCard'
 import { ADVANCE, BUSINESS, CHILD_FACTOR, GST, HOLD_HOURS, SITE_URL } from '@/lib/config'
+import { getReviews, reviewStats } from '@/lib/content'
 import { getDestinations, getTripBySlug, getTrips } from '@/lib/data'
 import { addDays, fmtDate, inr } from '@/lib/format'
 import type { GalleryImage } from '@/lib/types'
@@ -41,6 +44,8 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const [trip, dests] = await Promise.all([getTripBySlug(slug), getDestinations()])
   if (!trip) notFound()
+  const reviews = await getReviews(6, trip.id)
+  const rStats = reviewStats(reviews)
   const dest = dests.find((d) => d.slug === trip.destination?.slug)
   const dep = trip.departures[0]
   const url = `${SITE_URL}/trips/${trip.slug}`
@@ -48,9 +53,11 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
   const chips = tripChips(trip.inclusions)
   const cities = [...new Set(trip.departures.map((d) => d.start_city))]
   const startLine = cities.length ? `starts from ${cities.join(', ')}` : 'dates coming soon'
-  const hotels = dest?.hotels ?? []
-  const cars = dest?.cars ?? []
-  const itineraryHref = `/trips/${trip.slug}/itinerary?dl=1${dep ? `&dep=${dep.id}` : ''}`
+  // the trip's own hotels and cars (set in Admin → Trips) win; otherwise the destination's lists
+  const hotels = trip.hotels?.length ? trip.hotels : dest?.hotels ?? []
+  const cars = trip.cars?.length ? trip.cars : dest?.cars ?? []
+  // the owner's uploaded PDF if there is one, else the itinerary the website prints
+  const itineraryHref = trip.itinerary_pdf || `/trips/${trip.slug}/itinerary?dl=1${dep ? `&dep=${dep.id}` : ''}`
 
   // The trip's own gallery wins; otherwise the destination's photos fill the grid.
   const own = (trip.gallery ?? []).filter((g) => g?.src)
@@ -148,7 +155,9 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
         { id: 'itinerary', label: 'Itinerary' },
         ...(places.length ? [{ id: 'places', label: 'Places' }] : []),
         ...(goodToKnow.length ? [{ id: 'good-to-know', label: 'Good to know' }] : []),
-        { id: 'book', label: 'Dates & booking' },
+        { id: 'stays', label: 'Hotels & cars' },
+        { id: 'reviews', label: 'Reviews' },
+        { id: 'book', label: 'Book now' },
       ]} />
 
       <div className="m-wrap m-td">
@@ -219,7 +228,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
                 <ul className="st-list">
                   {hotels.map((h) => (
                     <li key={h.place + h.name}>
-                      <span className="st-ic"><Icon name="hotel" size={22} /></span>
+                      {h.image ? <span className="st-pic"><Image src={h.image} alt={h.name} fill sizes="96px" style={{ objectFit: 'cover' }} /></span> : <span className="st-ic"><Icon name="hotel" size={22} /></span>}
                       <div>
                         <b>{h.name}</b>
                         <small>{h.place}{h.stars ? <> · <span className="st-stars" aria-label={`${h.stars} star`}>{stars(h.stars)}</span></> : null}</small>
@@ -236,7 +245,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
                   <ul className="st-list st-cars">
                     {cars.map((c) => (
                       <li key={c.name}>
-                        <span className="st-ic sun"><Icon name="car" size={22} /></span>
+                        {c.image ? <span className="st-pic"><Image src={c.image} alt={c.name} fill sizes="96px" style={{ objectFit: 'cover' }} /></span> : <span className="st-ic sun"><Icon name="car" size={22} /></span>}
                         <div><b>{c.name}</b><small>{c.kind} · {c.seats} seats</small>{c.note && <p>{c.note}</p>}</div>
                       </li>
                     ))}
@@ -275,12 +284,25 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
             </ul>
           </div>
 
+          <div className="m-card m-pad" id="reviews">
+            <div className="rv-head">
+              <h2 className="m-h3">Reviews</h2>
+              {rStats && <span className="rv-score sm"><b>{rStats.avg.toFixed(1)}</b><Stars n={Math.round(rStats.avg)} /><span>{rStats.count}</span></span>}
+            </div>
+            {reviews.length
+              ? <div className="rv-list">{reviews.map((r) => <ReviewCard key={r.id} r={r} showTrip={false} />)}</div>
+              : <p className="m-muted m-sm" style={{ marginTop: 6 }}>No reviews for this trip yet. Travelled with us? <Link href="/reviews/new">Review Lavigo</Link>.</p>}
+          </div>
+
           {trip.faqs.length > 0 && (
             <div className="m-card m-pad" id="faqs">
               <h2 className="m-h3">FAQs</h2>
               {trip.faqs.map((f) => <details className="m-faq m-faq-flat" key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>)}
             </div>
           )}
+          <div className="m-card m-pad" id="ask">
+            <EnquiryForm kind="trip" trip={{ slug: trip.slug, title: trip.title }} compact title="Ask a question" intro="The owner answers on WhatsApp. Ask about dates, rooms, food, children, anything." />
+          </div>
           <p className="m-sm m-muted">Prefer your own dates or a different starting city? <Link href="/plan">Plan a custom trip</Link> or call {BUSINESS.phoneDisplay}.</p>
         </div>
 
@@ -297,7 +319,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       {dep && (
         <div className="mbar">
           <div><b>{inr(dep.price)}</b><small>per person · {dep.seats_left === 0 ? 'sold out' : `${dep.seats_left} seats left`}</small></div>
-          <a className="m-btn-sun" href="#book">Hold seats</a>
+          <a className="m-btn-sun" href="#book">Book now</a>
         </div>
       )}
     </div>

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { deleteTrip, duplicateTrip, saveTrip } from '../../../actions'
 import { ConfirmButton } from '@/components/admin/ConfirmButton'
 import { DepartureForm } from '@/components/admin/DepartureForm'
+import { DestinationPicker } from '@/components/admin/DestinationPicker'
+import { FileField } from '@/components/admin/FileField'
 import { GalleryEditor } from '@/components/admin/GalleryEditor'
 import { ImageField } from '@/components/admin/ImageField'
 import { RowsEditor } from '@/components/admin/RowsEditor'
@@ -26,6 +28,8 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
   const here = `/admin/trips/${id}`
   const upcoming = t?.departures.filter((d) => d.depart_date >= today) ?? []
   const past = t?.departures.filter((d) => d.depart_date < today) ?? []
+  const dest = dests.find((d) => d.id === t?.destination_id) ?? null
+  const STARS: [string, string][] = [['0', 'No rating'], ['2', '2 star'], ['3', '3 star'], ['4', '4 star'], ['5', '5 star']]
 
   return (
     <>
@@ -38,7 +42,7 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
 
       {!isNew && (
         <nav className="ad-jump" aria-label="Sections">
-          <a href="#basics">Basics</a><a href="#photos">Photos</a><a href="#story">Story</a><a href="#days">Day by day</a><a href="#places">Places</a><a href="#included">Included</a><a href="#good-to-know">Good to know</a><a href="#faqs">Questions</a><a href="#departures">Departures</a>
+          <a href="#basics">Basics</a><a href="#photos">Photos</a><a href="#stays">Hotels &amp; cars</a><a href="#pdf">Itinerary PDF</a><a href="#story">Story</a><a href="#days">Day by day</a><a href="#places">Places</a><a href="#included">Included</a><a href="#good-to-know">Good to know</a><a href="#faqs">Questions</a><a href="#departures">Departures</a>
         </nav>
       )}
 
@@ -54,11 +58,16 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
           </div>
           <div className="g3">
             <div className="fld"><label className="l" htmlFor="t-dest">Destination</label>
-              <select id="t-dest" className="inp" name="destination_id" defaultValue={t?.destination_id ?? ''}><option value="">None</option>{dests.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
-              <p className="hint">Its hotels, cars and photos appear on the trip page.</p></div>
+              <DestinationPicker options={dests.map((d) => ({ id: d.id, name: d.name }))} value={t?.destination_id ?? ''} /></div>
             <div className="fld"><label className="l" htmlFor="t-n">Nights</label><input id="t-n" className="inp" type="number" name="nights" min={0} max={30} defaultValue={t?.nights ?? 3} required /></div>
             <div className="fld"><label className="l" htmlFor="t-r">Route</label><input id="t-r" className="inp" name="route" defaultValue={t?.route} placeholder="Ranchi → NJP → Darjeeling" /></div>
           </div>
+          <div className="fld"><label className="l" htmlFor="t-kind">Type of trip</label>
+            <select id="t-kind" className="inp" name="kind" defaultValue={t?.kind ?? 'group'} style={{ maxWidth: 360 }}>
+              <option value="group">Group trip (fixed dates, trip leader)</option>
+              <option value="weekend">Weekend getaway</option>
+            </select>
+            <p className="hint">Weekend getaways appear under &quot;Weekend&quot; on the website.</p></div>
           <div className="fld"><label className="l" htmlFor="t-s">Short description</label><textarea id="t-s" className="inp" name="summary" defaultValue={t?.summary} maxLength={600} placeholder="Two or three sentences: what makes this trip special." /></div>
           <label className="chk"><input type="checkbox" name="published" defaultChecked={t ? t.published : true} /><span><b>Show on website</b><small>Untick to hide this trip without deleting it. Existing bookings are not affected.</small></span></label>
         </section>
@@ -70,6 +79,43 @@ export default async function TripEditor({ params, searchParams }: { params: Pro
           <ImageField name="image" value={t?.image ?? ''} />
           <label className="l" style={{ marginTop: 18 }}>Gallery</label>
           <GalleryEditor name="gallery_json" initial={(t?.gallery ?? []).map((g) => ({ src: g.src, caption: g.caption }))} />
+          <label className="l" style={{ marginTop: 22 }}>Photos of the place{dest ? `: ${dest.name}` : ''}</label>
+          <p className="hint" style={{ marginTop: 0 }}>{dest ? `These belong to ${dest.name} and are shared by every trip there, the destination card on the home page and the custom-trip planner.` : 'Pick a destination (or add a new one) above. Photos added here are saved to that place.'}</p>
+          <input type="hidden" name="dest_gallery_for" value={t?.destination_id ?? ''} />
+          <GalleryEditor name="dest_gallery_json" initial={(dest?.gallery ?? []).map((g) => ({ src: g.src, caption: g.caption }))} />
+        </section>
+
+        <section className="card pane" id="stays">
+          <h2 className="ad-h2">Hotels &amp; cars for this trip</h2>
+          <p className="ad-sub">Shown on the trip page under &quot;Hotels &amp; cars&quot;. Leave empty to show the destination&apos;s list{dest ? ` (${dest.hotels?.length ?? 0} hotels, ${dest.cars?.length ?? 0} cars for ${dest.name})` : ''}. Add a photo of each hotel and vehicle if you have one.</p>
+          <label className="l">Hotels</label>
+          <RowsEditor name="trip_hotels_json" addLabel="Add a hotel" itemLabel="Hotel"
+            initial={(t?.hotels ?? []).map((h) => ({ name: h.name, place: h.place, tier: h.tier, stars: String(h.stars ?? 0), note: h.note, image: h.image ?? '' }))}
+            fields={[
+              { key: 'name', label: 'Hotel name', placeholder: 'Hotel Middle Path' },
+              { key: 'place', label: 'Town', placeholder: 'Pokhara' },
+              { key: 'tier', label: 'Type', type: 'select', options: [['comfort', 'Comfort'], ['budget', 'Budget'], ['premium', 'Premium']] },
+              { key: 'stars', label: 'Stars', type: 'select', options: STARS },
+              { key: 'note', label: 'Note', type: 'textarea', placeholder: 'Lake-view rooms, breakfast buffet' },
+              { key: 'image', label: 'Photo', type: 'image' },
+            ]} />
+          <label className="l" style={{ marginTop: 18 }}>Cars &amp; coaches</label>
+          <RowsEditor name="trip_cars_json" addLabel="Add a vehicle" itemLabel="Vehicle"
+            initial={(t?.cars ?? []).map((c) => ({ name: c.name, kind: c.kind, seats: String(c.seats), note: c.note, image: c.image ?? '' }))}
+            fields={[
+              { key: 'name', label: 'Vehicle', placeholder: 'Tempo Traveller' },
+              { key: 'kind', label: 'Kind', placeholder: 'Mini coach' },
+              { key: 'seats', label: 'Seats', type: 'number', placeholder: '12' },
+              { key: 'note', label: 'Note', type: 'textarea', placeholder: 'AC, pushback seats, luggage carrier' },
+              { key: 'image', label: 'Photo', type: 'image' },
+            ]} />
+          <p className="hint" style={{ marginTop: 10 }}>The exact cab, number plate and driver for each date are set on that departure (below, under Departures).</p>
+        </section>
+
+        <section className="card pane" id="pdf">
+          <h2 className="ad-h2">Itinerary PDF</h2>
+          <p className="ad-sub">Upload your own itinerary for this trip. Travellers download it from the trip page, their booking and My trips. With no PDF, the website prints one from the day-by-day plan. To give one traveller a personal itinerary, open their booking.</p>
+          <FileField name="itinerary_pdf" value={t?.itinerary_pdf ?? ''} kind="pdf" />
         </section>
 
         <section className="card pane" id="story">

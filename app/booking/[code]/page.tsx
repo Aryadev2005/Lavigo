@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import { BUSINESS } from '@/lib/config'
 import { fmtDate, fmtDateTime, inr } from '@/lib/format'
 import { adminClient, writesConfigured } from '@/lib/supabase'
-import type { Passenger, TicketBy } from '@/lib/types'
+import { ageLabel } from '@/lib/age'
+import type { Cab, Passenger, TicketBy } from '@/lib/types'
 import { waLink } from '@/lib/whatsapp'
 
 export const dynamic = 'force-dynamic'
@@ -13,8 +14,8 @@ export const metadata: Metadata = { title: 'Your booking', robots: { index: fals
 type Row = {
   code: string; name: string; travellers: number; status: 'held' | 'confirmed' | 'cancelled' | 'expired'
   hold_expires_at: string | null; amount_total: number; amount_advance: number; amount_paid: number
-  other_names: string | null; passengers?: Passenger[]; ticket_by?: TicketBy; from_city?: string | null
-  departure: { id: string; depart_date: string; start_city?: string; trip: { title: string; slug: string; route: string } }
+  other_names: string | null; passengers?: Passenger[]; ticket_by?: TicketBy; from_city?: string | null; itinerary_url?: string | null
+  departure: { id: string; depart_date: string; start_city?: string; cab?: Cab; trip: { title: string; slug: string; route: string; itinerary_pdf?: string | null } }
 }
 
 export default async function BookingPage({ params }: { params: Promise<{ code: string }> }) {
@@ -22,7 +23,7 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
   if (!writesConfigured || !/^LVG-[0-9A-Za-z]{5}$/.test(code)) notFound()
   const { data } = await adminClient()
     .from('bookings')
-    .select('*, departure:departures(*, trip:trips(title,slug,route))') // * keeps working before and after migration 005
+    .select('*, departure:departures(*, trip:trips(*))') // * keeps working before and after migration 005
     .eq('code', code.toUpperCase())
     .maybeSingle()
   const b = data as unknown as Row | null
@@ -34,6 +35,9 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
   const trip = b.departure.trip
   const date = fmtDate(b.departure.depart_date, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
   const balance = Math.max(0, b.amount_total - b.amount_paid)
+  const itinerary = b.itinerary_url || trip.itinerary_pdf || `/trips/${trip.slug}/itinerary?dl=1&dep=${b.departure.id}`
+  const c = b.departure.cab
+  const cab = c && (c.vehicle || c.number || c.driver || c.image) ? c : null
   const wa = waLink(`Hi Lavigo, my booking code is ${b.code} for the ${trip.title} on ${fmtDate(b.departure.depart_date, { day: 'numeric', month: 'short', year: 'numeric' })} (${b.travellers} traveller${b.travellers > 1 ? 's' : ''}). Please confirm it and share the payment details for the ${inr(b.amount_advance)} advance.`)
 
   return (
@@ -54,7 +58,7 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
           {status === 'cancelled' && <>If this is a mistake, message us on WhatsApp.</>}
         </p>
         <div className="codebox" aria-label="Booking code">{b.code}</div>
-        <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>Keep this code. You need it, with your phone number, to look up your booking.</p>
+        <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>Keep this code. It is also saved in <a href="/account" style={{ textDecoration: 'underline' }}>My trips</a> when you are signed in.</p>
       </div>
 
       <div className="card pane">
@@ -63,7 +67,9 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
           <tr><td>Departure</td><td>{date}</td></tr>
           <tr><td>Route</td><td style={{ textAlign: 'right', fontWeight: 500 }}>{trip.route}</td></tr>
           {b.departure.start_city && <tr><td>Starts from</td><td>{b.departure.start_city}</td></tr>}
-          <tr><td>Travellers</td><td>{b.passengers?.length ? b.passengers.map((p) => `${p.name} (${p.gender === 'male' ? 'M' : 'F'})`).join(', ') : b.travellers}</td></tr>
+          <tr><td>Travellers</td><td>{b.passengers?.length
+            ? <ul className="bk-pax">{b.passengers.map((p, i) => <li key={i}><b>{p.name}</b> <span>{p.gender === 'male' ? 'Male' : 'Female'}{p.dob ? ` · ${ageLabel(p.dob, b.departure.depart_date)}` : ''}</span></li>)}</ul>
+            : b.travellers}</td></tr>
           {b.ticket_by && b.passengers?.length ? <tr><td>Train / flight tickets</td><td>{b.ticket_by === 'self' ? 'You book them' : `Lavigo books them${b.from_city ? ` from ${b.from_city}` : ''}`}</td></tr> : null}
           <tr><td>Trip total (incl. GST)</td><td>{inr(b.amount_total)}</td></tr>
           <tr><td>Advance to confirm (25%)</td><td>{inr(b.amount_advance)}</td></tr>
@@ -80,7 +86,24 @@ export default async function BookingPage({ params }: { params: Promise<{ code: 
         </div></div>
       )}
 
-      {(status === 'held' || status === 'confirmed') && <a className="btn b-ghost b-block" style={{ marginBottom: 10 }} href={`/trips/${trip.slug}/itinerary?dl=1&dep=${b.departure.id}`} target="_blank" rel="noopener">Download itinerary (PDF)</a>}
+      {status === 'confirmed' && cab && (
+        <div className="card pane bk-cab">
+          {cab.image && <img src={cab.image} alt={cab.vehicle || 'Your cab'} className="bk-cab-pic" />}
+          <div>
+            <h3 style={{ marginBottom: 6 }}>Your cab</h3>
+            <table className="brk"><tbody>
+              {cab.vehicle && <tr><td>Vehicle</td><td>{cab.vehicle}</td></tr>}
+              {cab.number && <tr><td>Number plate</td><td>{cab.number}</td></tr>}
+              {cab.driver && <tr><td>Driver</td><td>{cab.driver}</td></tr>}
+              {cab.driver_phone && <tr><td>Driver&apos;s phone</td><td><a href={`tel:+91${cab.driver_phone}`}>{cab.driver_phone}</a></td></tr>}
+              {cab.pickup && <tr><td>Pick-up</td><td>{cab.pickup}</td></tr>}
+            </tbody></table>
+            {cab.note && <p className="muted" style={{ marginTop: 8 }}>{cab.note}</p>}
+          </div>
+        </div>
+      )}
+
+      {(status === 'held' || status === 'confirmed') && <a className="btn b-ghost b-block" style={{ marginBottom: 10 }} href={itinerary} target="_blank" rel="noopener">{b.itinerary_url ? 'Download your personal itinerary (PDF)' : 'Download itinerary (PDF)'}</a>}
       {status === 'held' && <a className="btn b-wa b-block" href={wa} target="_blank" rel="noopener">Confirm on WhatsApp</a>}
       {status === 'confirmed' && <a className="btn b-wa b-block" href={waLink(`Hi Lavigo, a question about my booking ${b.code}.`)} target="_blank" rel="noopener">Message Lavigo on WhatsApp</a>}
       {(status === 'expired' || status === 'cancelled') && <Link className="btn b-main b-block" href={`/trips/${trip.slug}`}>Book this trip again</Link>}

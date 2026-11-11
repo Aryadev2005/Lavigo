@@ -8,6 +8,7 @@ import { PrintButton } from '@/components/admin/PrintButton'
 import { Icon } from '@/components/Icons'
 import { Flash, Head, PayPill, StatusPill, dDay, money, rel } from '@/components/admin/ui'
 import { getDeparture, isLiveHold, takesSeats, travellersOf } from '@/lib/admin-data'
+import { ageOn, isChild } from '@/lib/age'
 import { daysTo } from '@/lib/format'
 
 export const metadata = { title: 'Departure' }
@@ -24,6 +25,12 @@ export default async function DeparturePage({ params, searchParams }: { params: 
   const fromCities = new Map<string, number>()
   for (const b of ticketsToBook) fromCities.set(b.from_city || 'Not given', (fromCities.get(b.from_city || 'Not given') ?? 0) + b.travellers)
   const days = daysTo(d.depart_date)
+  const all = travelling.flatMap((b) => travellersOf(b))
+  const ages = all.map((x) => ageOn(x.dob, d.depart_date))
+  const kids = ages.filter((a) => isChild(a)).length
+  const adults = ages.filter((a) => a !== null && !isChild(a)).length
+  const noAge = ages.filter((a) => a === null).length
+  const cab = d.cab && (d.cab.vehicle || d.cab.number || d.cab.driver) ? d.cab : null
   let n = 0
 
   return (
@@ -44,7 +51,10 @@ export default async function DeparturePage({ params, searchParams }: { params: 
         <div><small>Seats left</small><b>{s.seatsLeft}</b></div>
         <div className="m"><small>Male</small><b>{s.genders.male}</b></div>
         <div className="f"><small>Female</small><b>{s.genders.female}{s.genders.unknown ? <span style={{ fontSize: 13, color: 'var(--muted)' }}> +{s.genders.unknown} ?</span> : null}</b></div>
+        <div><small>Adults</small><b>{adults}</b></div>
+        <div><small>Children</small><b>{kids}{noAge ? <span style={{ fontSize: 13, color: 'var(--muted)' }}> · {noAge} no age</span> : null}</b></div>
       </div>
+      {cab && <p className="ad-cabline"><Icon name="car" size={16} /> Cab: <b>{[cab.vehicle, cab.number].filter(Boolean).join(' · ')}</b>{cab.driver ? <> · driver {cab.driver}{cab.driver_phone ? <> (<a href={`tel:+91${cab.driver_phone}`}>{cab.driver_phone}</a>)</> : null}</> : null}{cab.pickup ? <> · {cab.pickup}</> : null} <a href="#cab" className="ad-noprint">Change</a></p>}
 
       <div className="ad-2col ad-noprint" style={{ marginBottom: 18 }}>
         <div className="card pane">
@@ -70,7 +80,7 @@ export default async function DeparturePage({ params, searchParams }: { params: 
       <div className="card ad-scroll">
         {travelling.length === 0 ? <div className="ad-empty"><b>No travellers yet</b>Bookings from the website and the ones you add appear here.</div> : (
           <table className="ad-tbl">
-            <thead><tr><th>#</th><th>Traveller</th><th>Gender</th><th>Booking</th><th>Lead phone</th><th>Tickets</th><th className="num">Paid / total</th></tr></thead>
+            <thead><tr><th>#</th><th>Traveller</th><th>Gender</th><th>Age</th><th>ID</th><th>Booking</th><th>Lead phone</th><th>Tickets</th><th className="num">Paid / total</th></tr></thead>
             <tbody>
               {travelling.flatMap((b) => {
                 const t = travellersOf(b)
@@ -79,6 +89,8 @@ export default async function DeparturePage({ params, searchParams }: { params: 
                     <td className="muted">{++n}</td>
                     <td><b style={{ fontWeight: x.lead ? 700 : 500 }}>{x.name}</b>{x.lead && t.length > 1 ? <small>lead · group of {t.length}</small> : null}{i === 0 && b.admin_note ? <small title="Private note">Note: {b.admin_note}</small> : null}</td>
                     <td><span className={'gx ' + (x.gender ?? 'unknown')}>{x.gender === 'male' ? 'M' : x.gender === 'female' ? 'F' : '?'}</span></td>
+                    <td>{(() => { const a = ageOn(x.dob, d.depart_date); return a === null ? <span className="muted">—</span> : <>{a}{isChild(a) && <span className="ad-kid">child</span>}</> })()}</td>
+                    <td>{x.idChecked ? <span className="ad-idok" title="ID checked">✓</span> : <span className="muted">—</span>}</td>
                     {i === 0 ? (
                       <>
                         <td rowSpan={t.length}><Link href={`/admin/bookings/${b.code}`} className="ad-code">{b.code}</Link><div style={{ marginTop: 4 }}><StatusPill b={b} /></div>{isLiveHold(b) && <small>lapses {rel(b.hold_expires_at!)}</small>}</td>
@@ -109,7 +121,7 @@ export default async function DeparturePage({ params, searchParams }: { params: 
       <div className="card pane ad-noprint" style={{ marginTop: 22 }}>
         <h2 className="ad-h2" style={{ fontSize: 17 }}>Edit this departure</h2>
         <p className="ad-sub">Changing the price only affects new bookings. Seats cannot go below the {s.confirmedSeats + s.heldSeats} already taken.</p>
-        <DepartureForm dep={d} back={here} />
+        <DepartureForm dep={d} back={here} withCab />
         {bookings.length === 0 && (
           <form action={deleteDeparture} style={{ marginTop: 14 }}>
             <input type="hidden" name="id" value={d.id} /><input type="hidden" name="trip_id" value={d.trip_id} /><input type="hidden" name="back" value={here} />

@@ -23,3 +23,6 @@ export const ADVANCE = 0.25
 export const SERVICE_PER_PERSON = 1500
 export const CHILD_FACTOR = 0.6
 export const HOLD_HOURS = 24
+// Travellers aged CHILD_MAX_AGE or younger on the day the trip starts are children and pay CHILD_FACTOR
+// of the adult price on group departures. Every booking needs at least one adult.
+export const CHILD_MAX_AGE = 11

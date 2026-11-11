@@ -2,8 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SUPABASE_ANON, SUPABASE_URL } from './lib/env'
 
-// Runs only on /admin/*: keeps the Supabase session fresh and bounces signed-out visitors to the login page.
-// This is an optimistic check. Every admin page and action ALSO calls requireAdmin().
+// Keeps the Supabase session fresh on /admin/* and the customer pages (My trips, reviews, sign-in links).
+// On /admin it also bounces signed-out visitors to the admin login. This is an optimistic check:
+// every admin page and action ALSO calls requireAdmin(), and customer pages call requireCustomer().
 export async function proxy(request: NextRequest) {
   const url = SUPABASE_URL
   const anon = SUPABASE_ANON
@@ -22,6 +23,7 @@ export async function proxy(request: NextRequest) {
   })
   const { data } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
+  if (!path.startsWith('/admin')) return response
   if (!data.user && path !== '/admin/login') {
     const to = request.nextUrl.clone()
     to.pathname = '/admin/login'
@@ -32,4 +34,4 @@ export async function proxy(request: NextRequest) {
   return response
 }
 
-export const config = { matcher: ['/admin/:path*'] }
+export const config = { matcher: ['/admin/:path*', '/account/:path*', '/reviews/new', '/api/me'] }

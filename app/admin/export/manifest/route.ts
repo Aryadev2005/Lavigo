@@ -1,5 +1,6 @@
 import { getAdmin } from '@/lib/admin-auth'
 import { getDeparture, takesSeats, travellersOf } from '@/lib/admin-data'
+import { ageOn, isChild } from '@/lib/age'
 import { csvResponse, toCsv } from '@/lib/csv'
 
 export const dynamic = 'force-dynamic'
@@ -10,11 +11,12 @@ export async function GET(req: Request) {
   const found = id ? await getDeparture(id) : null
   if (!found) return new Response('Departure not found', { status: 404 })
   const { departure: d, bookings } = found
-  const out: (string | number | null)[][] = [['#', 'Traveller', 'Gender', 'Lead traveller', 'Booking code', 'Status', 'Phone', 'Email', 'Tickets', 'Travelling from', 'Paid (INR)', 'Total (INR)', 'Note']]
+  const out: (string | number | null)[][] = [['#', 'Traveller', 'Gender', 'Date of birth', 'Age', 'Adult/Child', 'ID checked', 'Lead traveller', 'Booking code', 'Status', 'Phone', 'Email', 'Tickets', 'Travelling from', 'Paid (INR)', 'Total (INR)', 'Note']]
   let n = 0
   for (const b of bookings.filter(takesSeats)) {
     for (const t of travellersOf(b)) {
-      out.push([++n, t.name, t.gender ? (t.gender === 'male' ? 'Male' : 'Female') : '', t.lead ? 'Yes' : '', b.code, b.status === 'held' ? 'On hold' : 'Confirmed', b.phone, b.email,
+      const a = ageOn(t.dob, d.depart_date)
+      out.push([++n, t.name, t.gender ? (t.gender === 'male' ? 'Male' : 'Female') : '', t.dob ?? '', a ?? '', a === null ? '' : isChild(a) ? 'Child' : 'Adult', t.idChecked ? 'Yes' : '', t.lead ? 'Yes' : '', b.code, b.status === 'held' ? 'On hold' : 'Confirmed', b.phone, b.email,
         b.ticket_by === 'self' ? 'Own' : b.passengers?.length ? 'Lavigo' : '', b.from_city ?? '', t.lead ? b.amount_paid : '', t.lead ? b.amount_total : '', t.lead ? b.admin_note ?? '' : ''])
     }
   }

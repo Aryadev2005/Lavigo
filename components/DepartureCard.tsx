@@ -44,6 +44,7 @@ export function DepartureCard({ d }: { d: DepartureCardData }) {
           <div><div className="m-price">{inr(d.price)}</div><div className="m-muted m-xs">per person · incl. GST</div></div>
           <span className={'m-seat' + (d.seatsLeft === 0 ? ' sold' : seats.low ? ' low' : '')}>{seats.text}</span>
         </div>
+        <span className="lv-card-cta">{d.seatsLeft === 0 ? 'See other dates' : 'Book now'} <Icon name="arrow" size={15} /></span>
       </div>
     </Link>
   )
