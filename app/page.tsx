@@ -122,14 +122,14 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="m-sec" id="moments">
+      <section className="lv-moments" id="moments">
         <div className="m-wrap">
           <div className="m-sec-h">
             <div><h2>Trip moments</h2><p>Short videos from our recent Nepal group trip.</p></div>
             <a href={business.instagram} target="_blank" rel="noopener" className="m-more">More on Instagram <Icon name="arrow" size={18} /></a>
           </div>
-          <Moments reels={REELS} instagram={business.instagram} />
         </div>
+        <Moments reels={REELS} instagram={business.instagram} />
       </section>
 
       {home.photos.length > 0 && (
