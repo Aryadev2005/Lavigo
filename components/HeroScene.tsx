@@ -1,18 +1,19 @@
 'use client'
-// Home landing scene: a warm Himalayan dusk drawn in SVG (sky, far range, a snow peak, a dark ridge,
-// a pine forest), mist that drifts across, leaves that fall past, and gentle scroll parallax.
-// Nothing to download but this file and a few CSS rules (app/theme.css), so it shows instantly.
-// prefers-reduced-motion: no drifting, no falling leaves, no parallax (see theme.css).
+import Image from 'next/image'
 import { useEffect, useRef } from 'react'
+import ShinyText from './ShinyText'
+
+// Home landing scene (photo parallax layers), falling leaves, the lavender accent, and the small SVG
+// drawing helpers the destination scenes reuse.
 
 // tiny deterministic random so server and browser draw the same trees and leaves
-function rng(seed: number) {
+export function rng(seed: number) {
   let s = seed >>> 0
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296)
 }
 
 /** A natural ridgeline between two points (midpoint displacement), closed down to the bottom. */
-function ridge(seed: number, pts: [number, number][], rough: number, depth = 6, close = true) {
+export function ridge(seed: number, pts: [number, number][], rough: number, depth = 6, close = true) {
   const r = rng(seed)
   let line = pts
   let amp = rough
@@ -27,11 +28,11 @@ function ridge(seed: number, pts: [number, number][], rough: number, depth = 6, 
     line = next
     amp *= 0.55
   }
-  return 'M' + line.map(([x, y]) => `${x.toFixed(0)} ${y.toFixed(0)}`).join(' L') + (close ? ' L1640 640 L-40 640 Z' : ' Z')
+  return 'M' + line.map(([x, y]) => `${x.toFixed(0)} ${y.toFixed(0)}`).join(' L') + (close ? ' L1640 1000 L-40 1000 Z' : ' Z')
 }
 
 /** A row of pine trees as one SVG path, standing on a gently rolling ground line. */
-function pines(seed: number, base: number, minH: number, maxH: number, gap: number) {
+export function pines(seed: number, base: number, minH: number, maxH: number, gap: number) {
   const r = rng(seed)
   let d = ''
   let x = -30
@@ -55,7 +56,7 @@ function pines(seed: number, base: number, minH: number, maxH: number, gap: numb
     x += w * (0.55 + r() * 0.5) + gap * r()
   }
   // ground under the trees
-  return d + `M-40 ${base + 8} Q400 ${base - 10} 800 ${base + 6} T1640 ${base} L1640 640 L-40 640 Z`
+  return d + `M-40 ${base + 8} Q400 ${base - 10} 800 ${base + 6} T1640 ${base} L1640 1000 L-40 1000 Z`
 }
 
 const LEAF_PATHS = [
@@ -65,72 +66,62 @@ const LEAF_PATHS = [
 ]
 const LEAF_COLOURS = ['#B4472E', '#C8692F', '#D99A3C', '#8E3B2A', '#7FA86A', '#A8573A']
 
+// Photographic layers of one Himalayan dawn (built by scripts/build-hero-layers.mjs), each drifting at its own
+// depth with scroll and the pointer, with mist between them. Same object-position on every layer keeps them aligned.
+const PLANES = [
+  { src: '/img/hero/sky.webp', cls: 'lv-p-sky' },
+  { src: '/img/hero/peaks.webp', cls: 'lv-p-peaks' },
+  { src: '/img/hero/hills.webp', cls: 'lv-p-hills' },
+  { src: '/img/hero/forest.webp', cls: 'lv-p-forest' },
+]
+
 export function HeroScene() {
   const ref = useRef<HTMLDivElement>(null)
 
-  // scroll parallax: one CSS variable, every layer moves at its own depth
+  // one pair of CSS variables drives every plane: --sy (scroll) and --mx/--my (pointer, -1…1, eased)
   useEffect(() => {
     const el = ref.current
     if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let raf = 0
-    const on = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => {
-        const y = Math.min(window.scrollY, 1200)
-        el.style.setProperty('--sy', String(y))
-      })
+    const target = { x: 0, y: 0 }
+    const now = { x: 0, y: 0 }
+    const frame = () => {
+      now.x += (target.x - now.x) * 0.06
+      now.y += (target.y - now.y) * 0.06
+      el.style.setProperty('--sy', String(Math.min(window.scrollY, 1200)))
+      el.style.setProperty('--mx', now.x.toFixed(4))
+      el.style.setProperty('--my', now.y.toFixed(4))
+      raf = Math.abs(target.x - now.x) + Math.abs(target.y - now.y) > 0.001 ? requestAnimationFrame(frame) : 0
     }
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    return () => { window.removeEventListener('scroll', on); cancelAnimationFrame(raf) }
+    const wake = () => { if (!raf) raf = requestAnimationFrame(frame) }
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return
+      target.x = (e.clientX / window.innerWidth) * 2 - 1
+      target.y = (e.clientY / window.innerHeight) * 2 - 1
+      wake()
+    }
+    frame()
+    window.addEventListener('scroll', wake, { passive: true })
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => { window.removeEventListener('scroll', wake); window.removeEventListener('pointermove', onMove); cancelAnimationFrame(raf) }
   }, [])
+
+  const plane = (i: number) => (
+    <div key={PLANES[i].cls} className={'lv-plane ' + PLANES[i].cls}>
+      <Image src={PLANES[i].src} alt="" fill priority unoptimized />
+    </div>
+  )
 
   return (
     <div className="lv-scene" ref={ref} aria-hidden="true">
-      <div className="lv-sky" />
-      <div className="lv-sun" />
-
-      <svg className="lv-layer lv-far" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice" focusable="false">
-        <path d={ridge(3, [[-40, 330], [260, 250], [520, 300], [800, 230], [1080, 290], [1340, 220], [1640, 280]], 90)} fill="#A69CB8" opacity=".7" />
-      </svg>
-
-      <svg className="lv-layer lv-peak" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice" focusable="false">
-        <defs>
-          {/* snow above the snowline, blue-grey rock below it */}
-          <linearGradient id="lvRange" x1="0" y1="80" x2="0" y2="460" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="#FFFDF9" />
-            <stop offset=".34" stopColor="#ECE8F0" />
-            <stop offset=".43" stopColor="#8E94B2" />
-            <stop offset="1" stopColor="#4A5174" />
-          </linearGradient>
-          <linearGradient id="lvShade" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#2E3555" stopOpacity="0" />
-            <stop offset=".5" stopColor="#2E3555" stopOpacity=".28" />
-            <stop offset="1" stopColor="#2E3555" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={ridge(9, [[-40, 430], [150, 300], [300, 120], [350, 70], [420, 150], [520, 270], [720, 330], [930, 190], [1080, 290], [1300, 240], [1640, 340]], 60)} fill="url(#lvRange)" />
-        <path d={ridge(10, [[350, 72], [420, 160], [500, 262], [600, 330], [640, 640], [350, 640]], 36, 5, false)} fill="url(#lvShade)" />
-      </svg>
-
+      {plane(0)}
+      <div className="lv-glow" />
+      {plane(1)}
       <div className="lv-mist lv-m1" />
+      {plane(2)}
       <div className="lv-mist lv-m2" />
-
-      <svg className="lv-layer lv-ridge" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice" focusable="false">
-        <path d={ridge(21, [[-40, 450], [240, 390], [520, 430], [800, 370], [1060, 420], [1320, 380], [1640, 420]], 60)} fill="#3B4265" />
-      </svg>
-
-      <div className="lv-mist lv-m3" />
-
-      <svg className="lv-layer lv-trees-back" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice" focusable="false">
-        <path d={pines(11, 520, 50, 105, 30)} fill="#2B2F4C" />
-      </svg>
-      <svg className="lv-layer lv-trees" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice" focusable="false">
-        <path d={pines(23, 600, 90, 200, 60)} fill="#191B2F" />
-      </svg>
-
+      {plane(3)}
       <div className="lv-mist lv-m4" />
-
     </div>
   )
 }
@@ -174,8 +165,13 @@ export function FallingLeaves() {
   )
 }
 
-/** Turns "Mountains *are calling.*" into normal text with the starred part in the lavender italic. */
-export function Accent({ text }: { text: string }) {
+/** Turns "Mountains *are calling.*" into normal text with the starred part in an italic accent that a slow sheen crosses.
+ *  tone="dark" (default, light pages): violet with a lavender shine. tone="light" (over the hero photo): sunrise gold. */
+const TONES = { dark: { color: '#6042AE', shine: '#C9B5F4' }, light: { color: '#FFC56B', shine: '#FFF4DC' } }
+export function Accent({ text, tone = 'dark' }: { text: string; tone?: keyof typeof TONES }) {
   const parts = text.split(/(\*[^*]+\*)/g).filter(Boolean)
-  return <>{parts.map((p, i) => (p.startsWith('*') && p.endsWith('*') ? <em key={i} className="lv-accent">{p.slice(1, -1)}</em> : <span key={i}>{p}</span>))}</>
+  const t = TONES[tone]
+  return <>{parts.map((p, i) => (p.startsWith('*') && p.endsWith('*')
+    ? <em key={i} className={'lv-accent lv-accent-' + tone}><ShinyText text={p.slice(1, -1)} color={t.color} shineColor={t.shine} speed={1.8} delay={2.2} shineWidth={60} softness={0.6} glow={0.8} angle={110} /></em>
+    : <span key={i}>{p}</span>))}</>
 }

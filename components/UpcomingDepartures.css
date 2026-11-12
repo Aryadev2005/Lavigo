@@ -1,0 +1,94 @@
+/* Home "Upcoming group departures": feature card + compact list, both React Bits SpotlightCards */
+.ud-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:stretch;margin-top:6px}
+
+/* the next departure: deep ink card with a lavender spotlight */
+.spotlight-card.ud-lead{padding:10px;border-radius:26px;--spotlight-card-surface:var(--lv-ink);--spotlight-card-border:rgba(201,181,244,.18);box-shadow:0 30px 60px -30px rgba(29,22,51,.7)!important;
+  background:radial-gradient(120% 70% at 100% 100%,rgba(96,66,174,.45),transparent 60%),var(--lv-ink)}
+.ud-lead-in{display:flex;flex-direction:column;height:100%;color:#fff;animation:udIn .5s cubic-bezier(.2,.7,.2,1) both}
+.ud-lead-pic{position:relative;display:block;height:clamp(200px,24vw,260px);border-radius:18px;overflow:hidden;background:#2A2150}
+.ud-lead-pic img{transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.ud-lead:hover .ud-lead-pic img{transform:scale(1.05)}
+.ud-lead-pic:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(29,22,51,.25),transparent 35%,transparent 55%,rgba(29,22,51,.75))}
+.ud-badge{position:absolute;z-index:1;left:14px;top:14px;display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;border-radius:99px;background:rgba(255,255,255,.92);color:var(--lv-ink);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.ud-badge i{width:8px;height:8px;border-radius:50%;background:#2BB673;box-shadow:0 0 0 0 rgba(43,182,115,.6);animation:udPulse 1.8s infinite}
+.ud-count{position:absolute;z-index:1;right:16px;bottom:12px;font-size:14px;color:rgba(255,255,255,.9)}
+.ud-count b{font-family:var(--m-head);font-weight:400;font-size:34px;line-height:1;color:#fff;margin-right:4px}
+.ud-lead-body{display:flex;flex-direction:column;gap:8px;flex:1;padding:18px 14px 10px}
+.ud-when{font-size:13px;letter-spacing:.04em;color:var(--lv-lav)}
+.ud-lead-t{font-family:var(--m-head);font-weight:400;font-size:clamp(26px,2.4vw,32px);line-height:1.1;letter-spacing:-.015em}
+.ud-from{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:rgba(255,255,255,.75)}
+.ud-lead .ud-seats{color:rgba(255,255,255,.85);margin-top:4px}
+.ud-lead .ud-meter{background:rgba(255,255,255,.14)}
+.ud-lead-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+.ud-lead-foot small{display:block;font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.ud-lead .ud-price{color:#fff;font-size:28px}
+.ud-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:99px;background:#fff;color:var(--lv-ink);font-weight:600;font-size:14.5px;transition:background .2s,color .2s,transform .2s}
+.ud-lead:hover .ud-btn{background:var(--lv-lav);transform:translateY(-1px)}
+.ud-btn svg{transition:transform .2s}.ud-lead:hover .ud-btn svg{transform:translateX(3px)}
+
+/* the list */
+.ud-list{display:flex;flex-direction:column;gap:10px}
+.spotlight-card.ud-row{padding:0;border-radius:18px;box-shadow:0 1px 2px rgba(29,22,51,.04),0 12px 28px -22px rgba(76,49,148,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:udIn .5s cubic-bezier(.2,.7,.2,1) both;transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
+.spotlight-card.ud-row:hover{transform:translateX(4px);box-shadow:0 1px 2px rgba(29,22,51,.04),0 18px 34px -20px rgba(76,49,148,.5)}
+.ud-row-in{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:16px;padding:12px 16px 12px 12px;color:var(--lv-ink)}
+.ud-date{display:flex;flex-direction:column;align-items:center;justify-content:center;width:58px;height:64px;border-radius:14px;background:var(--lv-lav3);border:1px solid var(--lv-line);line-height:1}
+.ud-date small{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--lv-violet)}
+.ud-date small:last-child{color:var(--lv-muted);font-weight:600;letter-spacing:.04em;text-transform:none}
+.ud-date b{font-family:var(--m-head);font-weight:500;font-size:26px;margin:3px 0 2px}
+.ud-thumb{position:relative;width:64px;height:64px;border-radius:14px;overflow:hidden;background:var(--lv-lav2)}
+.ud-row-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ud-row-t{font-family:var(--m-head);font-weight:500;font-size:18px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ud-row-meta{font-size:13px;color:var(--lv-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ud-row-end{display:flex;align-items:center;gap:14px}
+.ud-price{font-family:var(--m-head);font-weight:500;letter-spacing:-.01em;color:var(--lv-ink);line-height:1}
+.ud-price.sm{font-size:20px}
+.ud-go{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--lv-line);color:var(--lv-violet);transition:background .2s,color .2s,border-color .2s}
+.ud-row:hover .ud-go{background:var(--lv-violet);border-color:var(--lv-violet);color:#fff}
+
+/* seats meter (both cards) */
+.ud-seats{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--lv-muted)}
+.ud-meter{position:relative;width:64px;height:5px;border-radius:9px;background:var(--lv-lav2);overflow:hidden}
+.ud-meter span{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:linear-gradient(90deg,var(--lv-violet-l),var(--lv-violet))}
+.ud-seats.low{color:#B5651D}.ud-seats.low .ud-meter span{background:linear-gradient(90deg,#F2B45A,#E07B2E)}
+.ud-seats.sold{color:var(--lv-bad)}.ud-seats.sold .ud-meter span{background:var(--lv-bad)}
+.ud-lead .ud-seats.low{color:#F6C27A}
+
+
+
+.ud-all{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto;padding:14px;border-radius:16px;border:1px dashed rgba(96,66,174,.35);color:var(--lv-violet);font-weight:600;font-size:14.5px;transition:background .2s,border-color .2s}
+.ud-all:hover{background:var(--lv-lav3);border-color:var(--lv-violet)}
+
+@keyframes udIn{from{opacity:0;transform:translateY(10px)}}
+@keyframes udPulse{70%{box-shadow:0 0 0 7px rgba(43,182,115,0)}100%{box-shadow:0 0 0 0 rgba(43,182,115,0)}}
+
+@media (max-width:900px){
+  .ud-grid{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .ud-row-in{grid-template-columns:auto minmax(0,1fr) auto;gap:12px;padding:10px 12px 10px 10px}
+  .ud-thumb,.ud-go{display:none}
+  .ud-row-t{font-size:16.5px}
+  .ud-lead-foot{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){
+  .ud-lead-in,.spotlight-card.ud-row,.ud-badge i{animation:none}
+  .spotlight-card.ud-row:hover{transform:none}
+}
+
+/* "plan your own dates" card: fills the column so both sides end level */
+.spotlight-card.ud-promo{flex:1;min-height:110px;padding:0;border-radius:18px;display:flex;background:radial-gradient(90% 140% at 0% 0%,rgba(201,181,244,.55),transparent 60%),linear-gradient(120deg,#FBF8FF,#EFE6FD)}
+.ud-promo-in{flex:1;display:flex;align-items:center;gap:16px;padding:18px 18px 18px 16px;color:var(--lv-ink)}
+.ud-promo-ic{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--lv-violet);color:#fff;box-shadow:0 12px 22px -12px rgba(76,49,148,.8)}
+.ud-promo-t{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.ud-promo-t b{font-family:var(--m-head);font-weight:500;font-size:19px}
+.ud-promo-t small{font-size:13.5px;color:var(--lv-muted)}
+.ud-btn-v{flex:none;background:var(--lv-violet);color:#fff}
+.ud-promo:hover .ud-btn-v{background:var(--lv-violet-d)}
+.ud-promo:hover .ud-btn-v svg{transform:translateX(3px)}
+.ud-all{margin-top:0}
+@media (max-width:560px){.ud-promo-in{flex-wrap:wrap}.ud-btn-v{width:100%;justify-content:center}}
+
+/* React Bits: flip-board date and rolling day counter on the feature photo */
+.ud-flap{position:absolute!important;z-index:1;left:14px;bottom:14px;filter:drop-shadow(0 8px 14px rgba(10,6,25,.45))}
+.ud-count{display:inline-flex;align-items:baseline;gap:6px}
+.ud-counter{font-family:var(--m-head)!important;line-height:1}

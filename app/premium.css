@@ -6,7 +6,7 @@
 :root{
   --pine:#221847;--pine-deep:#160F30;--pine-soft:#3D2E8C;--gold:#F2B33D;--gold-soft:#F6DFA6;
   --sand:#F4F2F8;--ivory:#FCFBFF;--sage:#CDBDF7;--moss:#5B5873;
-  --m-head:var(--font-display),Fraunces,Georgia,serif;
+  --m-head:var(--font-display),"Playfair Display",Georgia,serif;
   --m-sh:0 1px 2px rgba(34,24,71,.05),0 6px 20px -12px rgba(34,24,71,.18);
 }
 body,.m-page{background:var(--sand)}
@@ -313,3 +313,8 @@ button.pk-btn:focus-visible{outline:2px solid var(--lav);outline-offset:2px}
 .adm select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;cursor:pointer;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23221847' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center;background-size:14px}
+
+/* trip moments: sits on the page background, curved gallery runs edge to edge */
+.lv-moments{position:relative;padding:48px 0 20px}
+.m-moments{position:relative;height:min(540px,66vw);min-height:400px;margin-top:-12px}
+.m-moments-hint{position:absolute;left:0;right:0;bottom:10px;margin:0;text-align:center;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--moss);pointer-events:none}

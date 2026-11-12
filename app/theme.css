@@ -1,5 +1,5 @@
-/* Lavigo theme, loaded last: the violet-and-lavender palette, Fraunces headlines with lavender italics,
-   Plus Jakarta Sans for everything else, the dusk-mountain landing scene with drifting mist and falling
+/* Lavigo theme, loaded last: the violet-and-lavender palette, Playfair Display headlines with lavender italics,
+   Manrope for everything else, the dusk-mountain landing scene with drifting mist and falling
    leaves, and the styles for accounts, reviews, enquiries, the blog and the About page.
    The older layers use role names (--pine, --gold, --m-sun…); they are re-pointed here. */
 
@@ -25,7 +25,7 @@ body,.m-page{background:var(--lv-bg);color:var(--lv-ink)}
 :focus-visible{outline:2px solid var(--lv-violet);outline-offset:2px}
 em{font-style:italic}
 
-/* type: Fraunces with lavender-violet italics for emphasis */
+/* type: Playfair Display with lavender-violet italics for emphasis */
 .m-hero-h,.m-sec-h h2,.m-h3,.m-td-h,.m-band-txt h2,.pl-title,.pg-h,.ab-h2,.ab-name,.ac-h,.au-h,.bl-lead-t h2,.bl-card h3,.bp-hero h1,.rv-t,.lv-h{font-family:var(--m-head);letter-spacing:-.015em}
 .m-sec-h h2,.m-h3,.m-td-h,.pl-title{color:var(--lv-ink)}
 .m-sec-h h2 em,.pg-h em,.ab-h2 em,.au-h em,.ac-h em,.pl-enq h2 em{color:var(--lv-violet);font-weight:400}
@@ -86,6 +86,8 @@ em{font-style:italic}
 .lv-head.is-clear .m-tabs a:hover:not(.on){background:rgba(255,255,255,.14);color:#fff}
 .lv-head.is-clear .lv-acct,.lv-head.is-clear .lv-burger{border-color:rgba(255,255,255,.55);color:#fff}
 .lv-head.is-clear .lv-acct-skel{background:rgba(255,255,255,.18)}
+/* over a full-screen scene: a soft dusk fade instead of a bar, so the sky runs up to the top edge */
+.lv-head.is-scene.is-clear{background:linear-gradient(180deg,rgba(14,9,32,.42),rgba(14,9,32,0)) no-repeat border-box;border-bottom-color:transparent;text-shadow:0 1px 8px rgba(14,9,32,.35)}
 @media(max-width:1180px){
   .lv-burger{display:flex}
   .lv-head .m-tabs{display:none}
@@ -104,19 +106,20 @@ em{font-style:italic}
 /* ───────────── home: dusk mountain scene ───────────── */
 .lv-home{position:relative;margin-top:calc(-1 * var(--head-h, 74px))}
 .lv-hero{position:relative;min-height:max(620px,min(100vh,940px));display:flex;align-items:center;overflow:hidden;color:#fff;isolation:isolate;padding:calc(var(--head-h, 74px) + 40px) 0 150px}
-.lv-scene{position:absolute;inset:0;z-index:-1;--sy:0}
-.lv-sky{position:absolute;inset:0;background:linear-gradient(180deg,#5B5174 0%,#857595 18%,#B99A97 36%,#E2B47E 50%,#EBC28E 56%,#CDB2A6 66%,#9C99B4 82%,#7D7F9F 100%)}
-.lv-sun{position:absolute;left:52%;top:38%;width:70vmax;height:40vmax;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(255,214,150,.75),rgba(255,200,130,.28) 45%,rgba(255,190,120,0) 72%);pointer-events:none}
-.lv-layer{position:absolute;left:0;right:0;bottom:0;width:100%;height:100%;will-change:transform}
-.lv-far{transform:translate3d(0,calc(var(--sy) * .08px),0)}
-.lv-peak{transform:translate3d(0,calc(var(--sy) * .14px),0)}
-.lv-ridge{transform:translate3d(0,calc(var(--sy) * .22px),0)}
-.lv-trees-back{transform:translate3d(0,calc(var(--sy) * .3px),0)}
-.lv-trees{transform:translate3d(0,calc(var(--sy) * .4px),0);bottom:-2%}
+.lv-scene{position:absolute;inset:0;z-index:-1;--sy:0;--mx:0;--my:0;overflow:hidden;background:#5A3FB0}
+/* every plane: same cover crop (keeps the photo layers aligned), its own depth for scroll (--d) and pointer (--m) */
+.lv-plane{position:absolute;inset:0;transform-origin:50% 100%;will-change:transform;
+  transform:translate3d(calc(var(--mx) * var(--m) * -1px),calc(var(--sy) * var(--d) * 1px + var(--my) * var(--m) * -.4px),0) scale(1.08)}
+.lv-plane img{object-fit:cover;object-position:82% 100%}
+.lv-p-sky{--d:.04;--m:4}
+.lv-p-peaks{--d:.1;--m:10}
+.lv-p-hills{--d:.2;--m:20}
+.lv-p-forest{--d:.34;--m:34;bottom:-3%}
+/* the sun's warmth breathing on the right of the sky */
+.lv-glow{position:absolute;right:-8%;top:30%;width:60vmax;height:44vmax;transform:translateY(-10%);background:radial-gradient(closest-side,rgba(255,196,110,.45),rgba(255,160,110,.14) 50%,transparent 75%);pointer-events:none;mix-blend-mode:screen}
 .lv-mist{position:absolute;left:-30%;width:160%;pointer-events:none;filter:blur(14px);will-change:transform}
 .lv-m1{bottom:40%;height:26%;opacity:.55;background:radial-gradient(ellipse 18% 38% at 20% 55%,#fff,transparent 70%),radial-gradient(ellipse 22% 42% at 52% 50%,#fff,transparent 70%),radial-gradient(ellipse 16% 36% at 82% 60%,#fff,transparent 70%)}
 .lv-m2{bottom:30%;height:30%;opacity:.7;background:radial-gradient(ellipse 20% 40% at 10% 60%,#FBF6F1,transparent 70%),radial-gradient(ellipse 26% 46% at 40% 55%,#FBF6F1,transparent 72%),radial-gradient(ellipse 22% 40% at 72% 58%,#FBF6F1,transparent 70%),radial-gradient(ellipse 14% 30% at 96% 62%,#FBF6F1,transparent 70%)}
-.lv-m3{bottom:14%;height:30%;opacity:.62;background:radial-gradient(ellipse 24% 44% at 26% 60%,#F2EEF5,transparent 70%),radial-gradient(ellipse 22% 40% at 62% 56%,#F2EEF5,transparent 70%),radial-gradient(ellipse 18% 36% at 90% 62%,#F2EEF5,transparent 70%)}
 .lv-m4{bottom:-6%;height:26%;opacity:.4;background:radial-gradient(ellipse 30% 50% at 30% 60%,#E9E2F3,transparent 70%),radial-gradient(ellipse 30% 50% at 78% 60%,#E9E2F3,transparent 70%)}
 .lv-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(24,18,44,.38) 0%,rgba(24,18,44,.12) 45%,rgba(24,18,44,0) 70%),linear-gradient(180deg,rgba(24,18,44,.25),rgba(24,18,44,0) 30%)}
 .lv-hero-in{position:relative;width:100%}
@@ -134,19 +137,20 @@ em{font-style:italic}
 
 /* load-in: headline lines rise, mist drifts, leaves fall — only when motion is welcome */
 @media (prefers-reduced-motion:no-preference){
-  .lv-badge,.lv-h,.lv-intro,.lv-ctas{animation:lv-rise 1s cubic-bezier(.2,.8,.2,1) both}
-  .lv-h{animation-delay:.12s}.lv-intro{animation-delay:.26s}.lv-ctas{animation-delay:.4s}
-  .lv-peak{animation:lv-settle 2.2s cubic-bezier(.2,.8,.2,1) both}
+  .lv-badge,.lv-intro,.lv-ctas{animation:lv-rise 1s cubic-bezier(.2,.8,.2,1) both}
+  .lv-intro{animation-delay:.5s}.lv-ctas{animation-delay:.65s} /* the headline words rise via SplitText */
+  .lv-scene{animation:lv-push 2.6s cubic-bezier(.2,.7,.2,1) both}
+  .lv-glow{animation:lv-breathe 7s ease-in-out infinite alternate}
   .lv-m1{animation:lv-drift 70s ease-in-out infinite alternate}
   .lv-m2{animation:lv-drift 54s ease-in-out -12s infinite alternate-reverse}
-  .lv-m3{animation:lv-drift 46s ease-in-out -20s infinite alternate}
   .lv-m4{animation:lv-drift 38s ease-in-out -6s infinite alternate-reverse}
   .lv-mouse span{animation:lv-wheel 1.8s ease-in-out infinite}
   .lv-leaf{animation:lv-fall var(--dur) linear var(--delay) infinite}
   .lv-leaf svg{animation:lv-flutter calc(var(--dur) / 6) ease-in-out infinite alternate}
 }
 @keyframes lv-rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-@keyframes lv-settle{from{opacity:.4;transform:translate3d(0,24px,0) scale(1.03)}to{opacity:1;transform:translate3d(0,calc(var(--sy) * .14px),0)}}
+@keyframes lv-push{from{transform:scale(1.07);filter:brightness(.85) saturate(.9)}to{transform:none;filter:none}}
+@keyframes lv-breathe{from{opacity:.65}to{opacity:1}}
 @keyframes lv-drift{from{transform:translateX(-7%)}to{transform:translateX(7%)}}
 @keyframes lv-wheel{0%{transform:translateY(0);opacity:1}70%{transform:translateY(10px);opacity:0}100%{transform:translateY(0);opacity:0}}
 @keyframes lv-fall{
@@ -159,14 +163,15 @@ em{font-style:italic}
   100%{transform:translate3d(0,calc(100vh + 660px),0) rotate(var(--spin));opacity:0}
 }
 @keyframes lv-flutter{from{transform:rotateY(0) rotateX(10deg)}to{transform:rotateY(70deg) rotateX(-20deg)}}
-.lv-leaves{position:absolute;left:0;right:0;top:0;height:calc(100vh + 700px);overflow:hidden;pointer-events:none;z-index:6}
+.lv-leaves{position:absolute;left:0;right:0;top:0;height:max(620px,min(100vh,940px));overflow:hidden;pointer-events:none;z-index:1} /* hero only, under the search card */
 .lv-leaf{position:absolute;top:0;opacity:0;filter:drop-shadow(0 3px 4px rgba(29,22,51,.18))}
 .lv-leaf svg{display:block}
-@media (prefers-reduced-motion:reduce){.lv-leaves{display:none}.lv-layer{transform:none!important}}
+@media (prefers-reduced-motion:reduce){.lv-leaves{display:none}.lv-plane{transform:scale(1.08)!important}}
 @media(max-width:700px){
   .lv-leaf-wide{display:none}
   .lv-hero{min-height:640px;padding-bottom:140px;align-items:flex-start;padding-top:calc(var(--head-h, 64px) + 48px)}
   .lv-h{font-size:clamp(42px,12vw,60px)}
+  .lv-plane img{object-position:68% 100%}
   .lv-mouse{display:none}
   .lv-hero:after{background:linear-gradient(180deg,rgba(24,18,44,.45) 0%,rgba(24,18,44,.25) 55%,rgba(24,18,44,.1) 100%)}
   .lv-pill{font-size:11.5px;padding-left:18px;gap:10px}
@@ -428,3 +433,20 @@ em{font-style:italic}
 .bp-cta b{display:block;font-family:var(--m-head);font-weight:500;font-size:20px}
 .bp-cta span{color:var(--lv-muted);font-size:14px}
 @media(max-width:860px){.bp-fig{margin-left:0;margin-right:0}.bp-body p{font-size:17px}}
+
+/* ───────────── React Bits text: heading reveals and the brand quote ───────────── */
+.lv-h.split-parent{display:block!important}
+.lv-accent .shiny-text{font-style:italic;padding:.06em .14em .24em .04em;margin:-.06em -.14em -.24em -.04em} /* background-clip text only paints inside the box: room for descenders (g) and the italic overhang */
+.lv-faq-h{margin-bottom:14px}
+.lv-quote{padding:40px 0 24px}
+.lv-quote figure{position:relative;max-width:980px;margin:0 auto;text-align:center}
+.lv-quote-mark{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--lv-lav2);color:var(--lv-violet);margin-bottom:20px}
+.lv-quote-t{margin:0;font-family:var(--m-head);font-weight:400;font-size:clamp(28px,3.8vw,52px);line-height:1.18;letter-spacing:-.02em;color:var(--lv-ink)}
+.lv-quote figcaption{display:inline-flex;align-items:center;gap:12px;margin-top:26px;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--lv-violet)}
+.lv-quote figcaption span{width:32px;height:1.5px;background:currentColor}
+/* hero: the lavender accent stays whole (its sheen needs unsplit text) and drifts in after the letters land */
+.lv-h .lv-accent{margin-left:.24em}
+@media (prefers-reduced-motion:no-preference){.lv-h .lv-accent{display:inline-block;animation:lv-accent-in 1.4s cubic-bezier(.2,.8,.2,1) .55s both}}
+@keyframes lv-accent-in{from{opacity:0;transform:translateY(.25em);filter:blur(14px)}to{opacity:1;transform:none;filter:blur(0)}}
+/* the hero's gold accent gets a soft dark halo so it lifts off the violet sky */
+.lv-accent-light{filter:drop-shadow(0 2px 14px rgba(29,16,64,.45)) drop-shadow(0 0 2px rgba(29,16,64,.25))}

@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { fmtDate } from '@/lib/format'
 import type { Review } from '@/lib/content'
 import { Icon } from './Icons'
+import LogoLoop from './LogoLoop'
+import { Title } from './Title'
 
 export function Stars({ n, size = 16 }: { n: number; size?: number }) {
   return (
@@ -30,11 +32,37 @@ export function ReviewCard({ r, showTrip = true }: { r: Review; showTrip?: boole
   )
 }
 
+/** Home page: approved reviews drifting past in one or two marquee rows (React Bits LogoLoop), with the real average.
+ *  The page only renders this once there are a few reviews, so it never shows an empty state. */
+export function ReviewWall({ reviews }: { reviews: Review[] }) {
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+  const rows = reviews.length >= 6 ? [reviews.filter((_, i) => i % 2 === 0), reviews.filter((_, i) => i % 2 === 1)] : [reviews]
+  const loop = (list: Review[], i: number) => (
+    <LogoLoop key={i} className="rv-loop" ariaLabel={i ? 'More traveller reviews' : 'Traveller reviews'} logos={list.map((r) => ({ node: <ReviewCard r={r} />, title: r.name }))}
+      speed={i ? -28 : 32} gap={20} logoHeight={15} pauseOnHover fadeOut fadeOutColor="#F4EEFD" />
+  )
+  return (
+    <div className="rv-wall">
+      <div className="m-wrap m-sec-h">
+        <div>
+          <Title text="What travellers say" />
+          <p className="rv-score"><b>{avg.toFixed(1)}</b><Stars n={Math.round(avg)} size={18} /><span>from {reviews.length} reviews by travellers with a Lavigo account</span></p>
+        </div>
+        <div className="rv-strip-acts">
+          <Link href="/reviews" className="m-more">All reviews <Icon name="arrow" size={18} /></Link>
+          <Link href="/reviews/new" className="lv-pill lv-pill-soft">Review Lavigo <span aria-hidden="true"><Icon name="star" size={15} /></span></Link>
+        </div>
+      </div>
+      {rows.map(loop)}
+    </div>
+  )
+}
+
 export function ReviewStrip({ reviews, title = 'What travellers say', sub }: { reviews: Review[]; title?: string; sub?: string }) {
   return (
     <div className="rv-strip">
       <div className="m-sec-h">
-        <div><h2>{title}</h2>{sub && <p>{sub}</p>}</div>
+        <div><Title text={title} />{sub && <p>{sub}</p>}</div>
         <div className="rv-strip-acts">
           {reviews.length > 0 && <Link href="/reviews" className="m-more">All reviews <Icon name="arrow" size={18} /></Link>}
           <Link href="/reviews/new" className="lv-pill lv-pill-soft">Review Lavigo <span aria-hidden="true"><Icon name="star" size={15} /></span></Link>
