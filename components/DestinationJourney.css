@@ -34,6 +34,13 @@
 .dj-boat{animation:djBoat 30s ease-in-out infinite alternate}
 .dj-flag{transform-box:fill-box;transform-origin:top center;animation:djFlag 2.6s ease-in-out var(--fd) infinite alternate}
 .dj-sway path{transform-box:fill-box;transform-origin:bottom center;animation:djSway 7s ease-in-out infinite alternate}
+.dj-bob{animation:djBob 3.6s ease-in-out var(--fd) infinite alternate}
+.dj-glider{position:absolute;left:0;animation:djGlide var(--dur) linear var(--delay) infinite}
+.dj-glider svg{display:block;animation:djSwing 4s ease-in-out infinite alternate}
+.dj-darchor{transform-box:fill-box;transform-origin:left center;animation:djDarchor 2.2s ease-in-out var(--fd) infinite alternate}
+.dj-fall{stroke-dasharray:26 16;animation:djFallWater .9s linear infinite}
+.dj-mote{position:absolute;width:var(--s);height:var(--s);border-radius:50%;background:#FFE6A3;box-shadow:0 0 8px 2px rgba(255,214,120,.7);animation:djMote var(--dur) ease-in-out var(--delay) infinite}
+.dj-bulb{animation:djBulb 1.8s ease-in-out var(--fd) infinite alternate;filter:drop-shadow(0 0 4px #FFD36B)}
 
 @keyframes djDrift{to{transform:translateX(14%)}}
 @keyframes djFall{to{transform:translate3d(var(--sway),108vh,0)}}
@@ -45,6 +52,13 @@
 @keyframes djBoat{to{transform:translateX(120px)}}
 @keyframes djFlag{from{transform:skewX(-4deg) rotate(-2deg)}to{transform:skewX(5deg) rotate(3deg)}}
 @keyframes djSway{to{transform:rotate(1.2deg)}}
+@keyframes djBob{to{transform:translateY(4px) rotate(-1.5deg)}}
+@keyframes djGlide{from{transform:translate(-8vw,0)}50%{transform:translate(50vw,6vh)}to{transform:translate(110vw,-2vh)}}
+@keyframes djSwing{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
+@keyframes djDarchor{from{transform:skewY(-3deg) scaleX(.85)}to{transform:skewY(3deg) scaleX(1)}}
+@keyframes djFallWater{to{stroke-dashoffset:-42}}
+@keyframes djMote{0%{transform:translate(0,0);opacity:0}20%{opacity:1}100%{transform:translate(30px,-140px);opacity:0}}
+@keyframes djBulb{from{opacity:.45}to{opacity:1}}
 
 /* details on top */
 .dj-ui{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;padding:96px clamp(16px,5vw,80px) 56px}
@@ -127,6 +141,6 @@
   .dj-l,.dj-ph{transform:none!important}
   .dj-ph-card,.dj-hint span:after{animation:none}
   .dj-fx,.dj-mist{display:none}
-  .dj-wave,.dj-glint,.dj-foam,.dj-boat,.dj-flag,.dj-sway path{animation:none}
+  .dj-wave,.dj-glint,.dj-foam,.dj-boat,.dj-flag,.dj-sway path,.dj-bob,.dj-darchor,.dj-fall,.dj-bulb{animation:none}
   .dj-card,.dj-card.on,.dj-card.on>*{transition:none;animation:none;transform:none}
 }
