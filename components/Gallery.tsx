@@ -66,15 +66,19 @@ export function GalleryGrid({ images, label }: { images: GalleryImage[]; label: 
 }
 
 // Home page photo wall from a real trip; wide photos span two columns.
-export function PhotoWall({ photos, label }: { photos: (GalleryImage & { wide?: boolean })[]; label: string }) {
+/** max: show only the first few as a compact bento (one large tile + small ones); the lightbox still has every photo. */
+export function PhotoWall({ photos, label, max }: { photos: (GalleryImage & { wide?: boolean })[]; label: string; max?: number }) {
   const { setOpen, box } = useLightbox()
+  const shown = max ? photos.slice(0, max) : photos
+  const more = photos.length - shown.length
   return (
     <>
-      <div className="m-wall">
-        {photos.map((g, j) => (
-          <button key={g.src} type="button" className={g.wide ? 'wide' : undefined} onClick={() => setOpen({ list: photos, i: j, label })} aria-label={`View photo: ${g.caption}`}>
-            <Image src={g.src} alt={g.caption} fill sizes={g.wide ? '(max-width:600px) 100vw, 50vw' : '(max-width:600px) 50vw, 25vw'} style={{ objectFit: 'cover' }} />
+      <div className={'m-wall' + (max ? ' m-wall-bento' : '')}>
+        {shown.map((g, j) => (
+          <button key={g.src} type="button" className={g.wide && !max ? 'wide' : undefined} onClick={() => setOpen({ list: photos, i: j, label })} aria-label={`View photo: ${g.caption}`}>
+            <Image src={g.src} alt={g.caption} fill sizes={(max ? j === 0 : g.wide) ? '(max-width:600px) 100vw, 50vw' : '(max-width:600px) 50vw, 25vw'} style={{ objectFit: 'cover' }} />
             <span>{g.caption}</span>
+            {more > 0 && j === shown.length - 1 && <b className="m-wall-more">+{more} photos</b>}
           </button>
         ))}
       </div>

@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { Fragment } from 'react'
 import type { DepartureCardData } from '@/components/UpcomingDepartures'
 import { DestinationJourney } from '@/components/DestinationJourney'
 import { PhotoWall } from '@/components/Gallery'
@@ -78,7 +79,7 @@ export default async function Home() {
         <HeroScene />
         <div className="m-wrap lv-hero-in">
           <p className="lv-badge"><span aria-hidden="true" />{home.kicker}</p>
-          <Title tag="h1" className="lv-h" text={home.headline} trigger="load" splitType="chars" mask={false} delay={55} duration={1.4} ease="power3.out" from={{ opacity: 0, y: 46, rotate: 6, filter: 'blur(12px)' }} to={{ opacity: 1, y: 0, rotate: 0, filter: 'blur(0px)' }} hoverEffect="lift" ignore=".lv-accent">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}<Accent text={l} tone="light" /></span>)}</Title>
+          <Title tag="h1" className="lv-h" text={home.headline} trigger="load" splitType="chars" mask={false} delay={55} duration={1.4} ease="power3.out" from={{ opacity: 0, y: 46, rotate: 6, filter: 'blur(12px)' }} to={{ opacity: 1, y: 0, rotate: 0, filter: 'blur(0px)' }} hoverEffect="lift" ignore=".lv-accent">{headLines.map((l, i) => <Fragment key={i}>{i > 0 && <br />}<span><Accent text={l} tone="light" /></span></Fragment>)}</Title>
           <p className="lv-intro">{home.intro}</p>
           <div className="lv-ctas">
             <Link href="/trips" className="lv-pill">Explore trips <span aria-hidden="true"><Icon name="arrow" size={16} /></span></Link>
@@ -163,7 +164,7 @@ export default async function Home() {
               <div><Title text={home.photosTitle} /><p>{home.photosText}</p></div>
               <Link href="/trips" className="m-more">See upcoming trips <Icon name="arrow" size={18} /></Link>
             </div>
-            <PhotoWall photos={home.photos} label="Lavigo trip" />
+            <PhotoWall photos={home.photos} label="Lavigo trip" max={5} />
           </div>
         </section>
       )}
