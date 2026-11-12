@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { fmtDate } from '@/lib/format'
 import type { Review } from '@/lib/content'
 import { Icon } from './Icons'
+import { Title } from './Title'
 
 export function Stars({ n, size = 16 }: { n: number; size?: number }) {
   return (
@@ -34,7 +35,7 @@ export function ReviewStrip({ reviews, title = 'What travellers say', sub }: { r
   return (
     <div className="rv-strip">
       <div className="m-sec-h">
-        <div><h2>{title}</h2>{sub && <p>{sub}</p>}</div>
+        <div><Title text={title} />{sub && <p>{sub}</p>}</div>
         <div className="rv-strip-acts">
           {reviews.length > 0 && <Link href="/reviews" className="m-more">All reviews <Icon name="arrow" size={18} /></Link>}
           <Link href="/reviews/new" className="lv-pill lv-pill-soft">Review Lavigo <span aria-hidden="true"><Icon name="star" size={15} /></span></Link>

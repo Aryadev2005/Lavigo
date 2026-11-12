@@ -87,3 +87,8 @@
 .ud-promo:hover .ud-btn-v svg{transform:translateX(3px)}
 .ud-all{margin-top:0}
 @media (max-width:560px){.ud-promo-in{flex-wrap:wrap}.ud-btn-v{width:100%;justify-content:center}}
+
+/* React Bits: flip-board date and rolling day counter on the feature photo */
+.ud-flap{position:absolute!important;z-index:1;left:14px;bottom:14px;filter:drop-shadow(0 8px 14px rgba(10,6,25,.45))}
+.ud-count{display:inline-flex;align-items:baseline;gap:6px}
+.ud-counter{font-family:var(--m-head)!important;line-height:1}

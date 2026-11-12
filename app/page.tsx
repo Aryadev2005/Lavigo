@@ -9,6 +9,8 @@ import { HomeSearch } from '@/components/HomeSearch'
 import { JsonLd } from '@/components/JsonLd'
 import { Moments } from '@/components/Moments'
 import { ReviewStrip } from '@/components/Reviews'
+import ScrollReveal from '@/components/ScrollReveal'
+import { Title } from '@/components/Title'
 import { getReviews } from '@/lib/content'
 import { UpcomingDepartures } from '@/components/UpcomingDepartures'
 import { BUSINESS, SITE_URL } from '@/lib/config'
@@ -64,7 +66,7 @@ export default async function Home() {
         <HeroScene />
         <div className="m-wrap lv-hero-in">
           <p className="lv-badge"><span aria-hidden="true" />{home.kicker}</p>
-          <h1 className="lv-h">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}<Accent text={l} /></span>)}</h1>
+          <Title tag="h1" className="lv-h" text={home.headline} trigger="load" splitType="chars" mask={false} delay={55} duration={1.4} ease="power3.out" from={{ opacity: 0, y: 46, rotate: 6, filter: 'blur(12px)' }} to={{ opacity: 1, y: 0, rotate: 0, filter: 'blur(0px)' }} hoverEffect="lift" ignore=".lv-accent">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}<Accent text={l} /></span>)}</Title>
           <p className="lv-intro">{home.intro}</p>
           <div className="lv-ctas">
             <Link href="/trips" className="lv-pill">Explore trips <span aria-hidden="true"><Icon name="arrow" size={16} /></span></Link>
@@ -94,7 +96,7 @@ export default async function Home() {
         <section className="m-sec">
           <div className="m-wrap">
             <div className="m-sec-h">
-              <div><h2>Upcoming group departures</h2><p>{home.subline}</p></div>
+              <div><Title text="Upcoming group departures" /><p>{home.subline}</p></div>
               <Link href="/trips" className="m-more">View all trips <Icon name="arrow" size={18} /></Link>
             </div>
             <UpcomingDepartures departures={departureCards} />
@@ -104,7 +106,7 @@ export default async function Home() {
 
       <section className="m-sec dj-intro">
         <div className="m-wrap">
-          <div className="m-sec-h"><div><h2 id="dj-h">Handpicked <em>destinations</em></h2><p>Scroll to travel through each place. Join a group departure or plan a private trip on your own dates.</p></div></div>
+          <div className="m-sec-h"><div><Title text="Handpicked destinations"><span id="dj-h">Handpicked <em>destinations</em></span></Title><p>Scroll to travel through each place. Join a group departure or plan a private trip on your own dates.</p></div></div>
         </div>
       </section>
       <DestinationJourney stops={dests.map((d) => {
@@ -123,18 +125,30 @@ export default async function Home() {
       <section className="lv-moments" id="moments">
         <div className="m-wrap">
           <div className="m-sec-h">
-            <div><h2>Trip moments</h2><p>Short videos from our recent Nepal group trip.</p></div>
+            <div><Title text="Trip moments" /><p>Short videos from our recent Nepal group trip.</p></div>
             <a href={business.instagram} target="_blank" rel="noopener" className="m-more">More on Instagram <Icon name="arrow" size={18} /></a>
           </div>
         </div>
         <Moments reels={REELS} instagram={business.instagram} />
       </section>
 
+      <section className="m-sec lv-quote" aria-label="The Lavigo promise">
+        <div className="m-wrap">
+          <figure>
+            <span className="lv-quote-mark" aria-hidden="true"><Icon name="quote" size={40} /></span>
+            <ScrollReveal containerClassName="lv-quote-t" baseOpacity={0.12} enableBlur blurStrength={6} baseRotation={0} wordAnimationEnd="center 50%">
+              From the first morning on the road to the last sunset of the trip, a Lavigo trip leader travels with your group.
+            </ScrollReveal>
+            <figcaption><span />The Lavigo promise</figcaption>
+          </figure>
+        </div>
+      </section>
+
       {home.photos.length > 0 && (
         <section className="m-sec" id="gallery">
           <div className="m-wrap">
             <div className="m-sec-h">
-              <div><h2>{home.photosTitle}</h2><p>{home.photosText}</p></div>
+              <div><Title text={home.photosTitle} /><p>{home.photosText}</p></div>
               <Link href="/trips" className="m-more">See upcoming trips <Icon name="arrow" size={18} /></Link>
             </div>
             <PhotoWall photos={home.photos} label="Lavigo trip" />
@@ -147,7 +161,7 @@ export default async function Home() {
           <div className="m-band">
             <div className="m-band-txt">
               <p className="m-kicker">Custom trip planner</p>
-              <h2>Your dates, your group, your pace.</h2>
+              <Title text="Your dates, your group, your pace." />
               <p>Start from your own city. Pick places, nights, hotels, cars and activities, see a day-by-day plan with an estimate, download it as a PDF and get the final quote on WhatsApp.</p>
               <div className="m-band-cta">
                 <Link href="/plan" className="m-btn-sun">Plan my trip</Link>
@@ -161,7 +175,7 @@ export default async function Home() {
 
       <section className="m-sec">
         <div className="m-wrap">
-          <div className="m-sec-h"><div><h2>Booking takes three steps</h2></div></div>
+          <div className="m-sec-h"><div><Title text="Booking takes three steps" /></div></div>
           <div className="m-g3">
             <div className="m-card m-step"><span>01</span><h3>Choose a departure</h3><p>Pick a fixed-date group trip, or plan a private one from your own city. Check the hotels, cars and itinerary first.</p></div>
             <div className="m-card m-step"><span>02</span><h3>Hold your seats</h3><p>Add each traveller and tell us if we should book your tickets. Seats are held for 24 hours. Nothing to pay online.</p></div>
@@ -179,13 +193,13 @@ export default async function Home() {
           <div className="m-card m-about-c">
             <div className="m-about-pic"><Image src={ABOUT_IMAGE} alt="Lavigo travellers with the Lavigo banner at Phewa Lake, Pokhara" fill sizes="(max-width:900px) 100vw, 400px" style={{ objectFit: 'cover' }} /></div>
             <div style={{ padding: 24 }}>
-              <h2 className="m-h3">One team, trips for all of India</h2>
+              <Title className="m-h3" text="One team, trips for all of India" />
               <p className="m-muted" style={{ marginTop: 8 }}>{BUSINESS.name} plans every trip from our office in Ranchi and welcomes travellers from any city. A Lavigo trip leader travels with each group from the first day to the last.</p>
               <p className="m-sm" style={{ marginTop: 12 }}>{business.address}</p>
             </div>
           </div>
           <div className="m-about-faq">
-            <h2 className="m-h3" style={{ marginBottom: 14 }}>Common questions</h2>
+            <Title className="m-h3 lv-faq-h" text="Common questions" />
             {FAQ.map((f, i) => <details className="m-faq" key={f.q} open={i === 0}><summary>{f.q}</summary><p>{f.a}</p></details>)}
           </div>
         </div>

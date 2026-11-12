@@ -4,6 +4,7 @@
 // Nothing to download but this file and a few CSS rules (app/theme.css), so it shows instantly.
 // prefers-reduced-motion: no drifting, no falling leaves, no parallax (see theme.css).
 import { useEffect, useRef } from 'react'
+import ShinyText from './ShinyText'
 
 // tiny deterministic random so server and browser draw the same trees and leaves
 export function rng(seed: number) {
@@ -174,8 +175,10 @@ export function FallingLeaves() {
   )
 }
 
-/** Turns "Mountains *are calling.*" into normal text with the starred part in the lavender italic. */
+/** Turns "Mountains *are calling.*" into normal text with the starred part in the lavender italic, which a slow sheen crosses. */
 export function Accent({ text }: { text: string }) {
   const parts = text.split(/(\*[^*]+\*)/g).filter(Boolean)
-  return <>{parts.map((p, i) => (p.startsWith('*') && p.endsWith('*') ? <em key={i} className="lv-accent">{p.slice(1, -1)}</em> : <span key={i}>{p}</span>))}</>
+  return <>{parts.map((p, i) => (p.startsWith('*') && p.endsWith('*')
+    ? <em key={i} className="lv-accent"><ShinyText text={p.slice(1, -1)} color="#C9B5F4" shineColor="#FFFFFF" speed={1.8} delay={2.2} shineWidth={60} softness={0.6} glow={0.8} angle={110} /></em>
+    : <span key={i}>{p}</span>))}</>
 }

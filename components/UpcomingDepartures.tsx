@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { Art } from './Art'
 import { Icon } from './Icons'
 import { MonthChips } from './MonthChips'
+import Counter from './Counter'
 import SpotlightCard from './SpotlightCard'
+import SplitFlapText from './SplitFlapText'
 import { dateRangeLabel, daysTo, fmtDate, inr } from '@/lib/format'
 import { monthsFromDates } from '@/lib/months'
 import { useMonthFilter } from '@/lib/useMonthFilter'
@@ -72,7 +74,9 @@ export function UpcomingDepartures({ departures }: { departures: DepartureCardDa
             <span className="ud-lead-pic">
               <Pic d={lead} sizes="(max-width:900px) 100vw, 480px" />
               <span className="ud-badge"><i aria-hidden="true" />Next departure</span>
-              <span className="ud-count" suppressHydrationWarning>{days <= 0 ? 'Leaves today' : days === 1 ? 'Leaves tomorrow' : <><b>{days}</b> days to go</>}</span>
+              {/* departures-board date and a rolling countdown, both re-run when the month filter changes the trip */}
+              <SplitFlapText className="ud-flap" text={fmtDate(lead.date, { day: '2-digit', month: 'short' }).toUpperCase()} loop={false} padTo={6} fontSize={22} gap={3} tileRadius={5} tileColor="#1D1633" textColor="#F6F1FE" flipsPerChar={6} stagger={0.07} glare={0.25} />
+              <span className="ud-count" suppressHydrationWarning>{days <= 1 ? (days <= 0 ? 'Leaves today' : 'Leaves tomorrow') : <><Counter value={days} fontSize={34} fontWeight={400} textColor="#fff" duration={1.4} className="ud-counter" /> days to go</>}</span>
             </span>
             <span className="ud-lead-body">
               <span className="ud-when">{dateRangeLabel(lead.date, lead.nights)} · {lead.nights}N / {lead.nights + 1}D</span>

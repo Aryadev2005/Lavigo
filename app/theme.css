@@ -1,5 +1,5 @@
-/* Lavigo theme, loaded last: the violet-and-lavender palette, Fraunces headlines with lavender italics,
-   Plus Jakarta Sans for everything else, the dusk-mountain landing scene with drifting mist and falling
+/* Lavigo theme, loaded last: the violet-and-lavender palette, Playfair Display headlines with lavender italics,
+   Manrope for everything else, the dusk-mountain landing scene with drifting mist and falling
    leaves, and the styles for accounts, reviews, enquiries, the blog and the About page.
    The older layers use role names (--pine, --gold, --m-sun…); they are re-pointed here. */
 
@@ -25,7 +25,7 @@ body,.m-page{background:var(--lv-bg);color:var(--lv-ink)}
 :focus-visible{outline:2px solid var(--lv-violet);outline-offset:2px}
 em{font-style:italic}
 
-/* type: Fraunces with lavender-violet italics for emphasis */
+/* type: Playfair Display with lavender-violet italics for emphasis */
 .m-hero-h,.m-sec-h h2,.m-h3,.m-td-h,.m-band-txt h2,.pl-title,.pg-h,.ab-h2,.ab-name,.ac-h,.au-h,.bl-lead-t h2,.bl-card h3,.bp-hero h1,.rv-t,.lv-h{font-family:var(--m-head);letter-spacing:-.015em}
 .m-sec-h h2,.m-h3,.m-td-h,.pl-title{color:var(--lv-ink)}
 .m-sec-h h2 em,.pg-h em,.ab-h2 em,.au-h em,.ac-h em,.pl-enq h2 em{color:var(--lv-violet);font-weight:400}
@@ -136,8 +136,8 @@ em{font-style:italic}
 
 /* load-in: headline lines rise, mist drifts, leaves fall — only when motion is welcome */
 @media (prefers-reduced-motion:no-preference){
-  .lv-badge,.lv-h,.lv-intro,.lv-ctas{animation:lv-rise 1s cubic-bezier(.2,.8,.2,1) both}
-  .lv-h{animation-delay:.12s}.lv-intro{animation-delay:.26s}.lv-ctas{animation-delay:.4s}
+  .lv-badge,.lv-intro,.lv-ctas{animation:lv-rise 1s cubic-bezier(.2,.8,.2,1) both}
+  .lv-intro{animation-delay:.5s}.lv-ctas{animation-delay:.65s} /* the headline words rise via SplitText */
   .lv-peak{animation:lv-settle 2.2s cubic-bezier(.2,.8,.2,1) both}
   .lv-m1{animation:lv-drift 70s ease-in-out infinite alternate}
   .lv-m2{animation:lv-drift 54s ease-in-out -12s infinite alternate-reverse}
@@ -430,3 +430,18 @@ em{font-style:italic}
 .bp-cta b{display:block;font-family:var(--m-head);font-weight:500;font-size:20px}
 .bp-cta span{color:var(--lv-muted);font-size:14px}
 @media(max-width:860px){.bp-fig{margin-left:0;margin-right:0}.bp-body p{font-size:17px}}
+
+/* ───────────── React Bits text: heading reveals and the brand quote ───────────── */
+.lv-h.split-parent{display:block!important}
+.lv-accent .shiny-text{font-style:italic;padding:.06em .14em .24em .04em;margin:-.06em -.14em -.24em -.04em} /* background-clip text only paints inside the box: room for descenders (g) and the italic overhang */
+.lv-faq-h{margin-bottom:14px}
+.lv-quote{padding:40px 0 24px}
+.lv-quote figure{position:relative;max-width:980px;margin:0 auto;text-align:center}
+.lv-quote-mark{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--lv-lav2);color:var(--lv-violet);margin-bottom:20px}
+.lv-quote-t{margin:0;font-family:var(--m-head);font-weight:400;font-size:clamp(28px,3.8vw,52px);line-height:1.18;letter-spacing:-.02em;color:var(--lv-ink)}
+.lv-quote figcaption{display:inline-flex;align-items:center;gap:12px;margin-top:26px;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--lv-violet)}
+.lv-quote figcaption span{width:32px;height:1.5px;background:currentColor}
+/* hero: the lavender accent stays whole (its sheen needs unsplit text) and drifts in after the letters land */
+.lv-h .lv-accent{margin-left:.24em}
+@media (prefers-reduced-motion:no-preference){.lv-h .lv-accent{display:inline-block;animation:lv-accent-in 1.4s cubic-bezier(.2,.8,.2,1) .55s both}}
+@keyframes lv-accent-in{from{opacity:0;transform:translateY(.25em);filter:blur(14px)}to{opacity:1;transform:none;filter:blur(0)}}
