@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import type { DepartureCardData } from '@/components/DepartureCard'
+import type { DepartureCardData } from '@/components/UpcomingDepartures'
 import { DestinationJourney } from '@/components/DestinationJourney'
 import { PhotoWall } from '@/components/Gallery'
 import { Accent, FallingLeaves, HeroScene } from '@/components/HeroScene'
