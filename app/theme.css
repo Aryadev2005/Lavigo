@@ -86,6 +86,8 @@ em{font-style:italic}
 .lv-head.is-clear .m-tabs a:hover:not(.on){background:rgba(255,255,255,.14);color:#fff}
 .lv-head.is-clear .lv-acct,.lv-head.is-clear .lv-burger{border-color:rgba(255,255,255,.55);color:#fff}
 .lv-head.is-clear .lv-acct-skel{background:rgba(255,255,255,.18)}
+/* over a full-screen scene: a soft dusk fade instead of a bar, so the sky runs up to the top edge */
+.lv-head.is-scene.is-clear{background:linear-gradient(180deg,rgba(14,9,32,.42),rgba(14,9,32,0)) no-repeat border-box;border-bottom-color:transparent;text-shadow:0 1px 8px rgba(14,9,32,.35)}
 @media(max-width:1180px){
   .lv-burger{display:flex}
   .lv-head .m-tabs{display:none}

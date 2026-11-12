@@ -6,13 +6,13 @@
 import { useEffect, useRef } from 'react'
 
 // tiny deterministic random so server and browser draw the same trees and leaves
-function rng(seed: number) {
+export function rng(seed: number) {
   let s = seed >>> 0
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296)
 }
 
 /** A natural ridgeline between two points (midpoint displacement), closed down to the bottom. */
-function ridge(seed: number, pts: [number, number][], rough: number, depth = 6, close = true) {
+export function ridge(seed: number, pts: [number, number][], rough: number, depth = 6, close = true) {
   const r = rng(seed)
   let line = pts
   let amp = rough
@@ -27,11 +27,11 @@ function ridge(seed: number, pts: [number, number][], rough: number, depth = 6, 
     line = next
     amp *= 0.55
   }
-  return 'M' + line.map(([x, y]) => `${x.toFixed(0)} ${y.toFixed(0)}`).join(' L') + (close ? ' L1640 640 L-40 640 Z' : ' Z')
+  return 'M' + line.map(([x, y]) => `${x.toFixed(0)} ${y.toFixed(0)}`).join(' L') + (close ? ' L1640 1000 L-40 1000 Z' : ' Z')
 }
 
 /** A row of pine trees as one SVG path, standing on a gently rolling ground line. */
-function pines(seed: number, base: number, minH: number, maxH: number, gap: number) {
+export function pines(seed: number, base: number, minH: number, maxH: number, gap: number) {
   const r = rng(seed)
   let d = ''
   let x = -30
@@ -55,7 +55,7 @@ function pines(seed: number, base: number, minH: number, maxH: number, gap: numb
     x += w * (0.55 + r() * 0.5) + gap * r()
   }
   // ground under the trees
-  return d + `M-40 ${base + 8} Q400 ${base - 10} 800 ${base + 6} T1640 ${base} L1640 640 L-40 640 Z`
+  return d + `M-40 ${base + 8} Q400 ${base - 10} 800 ${base + 6} T1640 ${base} L1640 1000 L-40 1000 Z`
 }
 
 const LEAF_PATHS = [

@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Art } from '@/components/Art'
 import type { DepartureCardData } from '@/components/DepartureCard'
+import { DestinationJourney } from '@/components/DestinationJourney'
 import { PhotoWall } from '@/components/Gallery'
 import { Accent, FallingLeaves, HeroScene } from '@/components/HeroScene'
 import { Icon, type IconName } from '@/components/Icons'
@@ -13,7 +13,7 @@ import { getReviews } from '@/lib/content'
 import { UpcomingDepartures } from '@/components/UpcomingDepartures'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
-import { addDays, inr, isoDate, todayISO } from '@/lib/format'
+import { addDays, fmtDate, inr, isoDate, todayISO } from '@/lib/format'
 import { ABOUT_IMAGE, PLAN_IMAGE, REELS } from '@/lib/media'
 import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
@@ -102,25 +102,23 @@ export default async function Home() {
         </section>
       )}
 
-      <section className="m-sec" id="destinations">
+      <section className="m-sec dj-intro">
         <div className="m-wrap">
-          <div className="m-sec-h"><div><h2>Handpicked destinations</h2><p>Join a group departure or plan a private trip on your own dates.</p></div></div>
-          <div className="m-dests">
-            {dests.map((d, i) => {
-              const t = tripFor(d.slug)
-              const p = fromPrice(d.slug)
-              return (
-                <Link key={d.slug} href={t ? `/trips/${t.slug}` : `/plan?dest=${d.slug}`} className={'m-dest' + (i === 0 ? ' big' : '')}>
-                  {d.hero_image
-                    ? <Image src={d.hero_image} alt={`${d.name}: ${d.area}`} fill sizes={i === 0 ? '(max-width:600px) 100vw, 50vw' : '(max-width:600px) 100vw, 25vw'} style={{ objectFit: 'cover' }} />
-                    : <Art theme={d.theme} h={220} variant={1} id={'d' + d.slug} />}
-                  <span className="m-dest-t"><b>{d.name}</b><span>{d.area}{p ? ` · from ${inr(p)}` : t ? '' : ' · private trips'}</span></span>
-                </Link>
-              )
-            })}
-          </div>
+          <div className="m-sec-h"><div><h2 id="dj-h">Handpicked <em>destinations</em></h2><p>Scroll to travel through each place. Join a group departure or plan a private trip on your own dates.</p></div></div>
         </div>
       </section>
+      <DestinationJourney stops={dests.map((d) => {
+        const t = tripFor(d.slug)
+        const p = fromPrice(d.slug)
+        const next = departures.find((x) => x.dest === d.slug)
+        const cover = d.hero_image ?? t?.image ?? null
+        const photos = [...(cover ? [{ src: cover, caption: d.name }] : []), ...(d.gallery ?? [])].filter((x, i, a) => a.findIndex((y) => y.src === x.src) === i).slice(0, 3)
+        return {
+          slug: d.slug, name: d.name, area: d.area, blurb: d.blurb, places: d.places ?? [], nights: t?.nights ?? d.default_nights,
+          href: t ? `/trips/${t.slug}` : `/plan?dest=${d.slug}`, plan: `/plan?dest=${d.slug}`, price: p ? inr(p) : null, cta: t ? 'See the trip' : 'Plan a private trip',
+          next: next ? fmtDate(next.date) : null, from: next?.startCity ?? null, photos,
+        }
+      })} />
 
       <section className="lv-moments" id="moments">
         <div className="m-wrap">

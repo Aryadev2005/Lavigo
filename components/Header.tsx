@@ -23,6 +23,7 @@ export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: st
   const head = useRef<HTMLElement>(null)
   const [q, setQ] = useState('')
   const [scrolled, setScrolled] = useState(false)
+  const [overScene, setOverScene] = useState(false)
   const [open, setOpen] = useState(false)
   const me = useMe()
   const home = path === '/'
@@ -39,14 +40,22 @@ export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: st
   }, [path])
   useEffect(() => { setQ(window.location.search); setOpen(false) }, [path])
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 40)
+    // full-screen scenes (marked data-nav-clear) show through the header while they sit under it
+    const on = () => {
+      setScrolled(window.scrollY > 40)
+      const h = head.current?.offsetHeight ?? 0
+      setOverScene([...document.querySelectorAll('[data-nav-clear]')].some((el) => {
+        const r = el.getBoundingClientRect()
+        return r.top <= h && r.bottom > h
+      }))
+    }
     on()
     window.addEventListener('scroll', on, { passive: true })
     return () => window.removeEventListener('scroll', on)
-  }, [])
+  }, [path])
 
   if (path.startsWith('/admin') || path.endsWith('/itinerary')) return null
-  const clear = home && !scrolled && !open // see-through over the home hero until you scroll
+  const clear = ((home && !scrolled) || overScene) && !open // see-through over the home hero until you scroll, and over scenes
   return (
     <>
       <div className="m-util">
@@ -58,7 +67,7 @@ export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: st
           </span>
         </div>
       </div>
-      <header className={'m-head lv-head' + (clear ? ' is-clear' : '') + (open ? ' is-open' : '')} ref={head}>
+      <header className={'m-head lv-head' + (clear ? ' is-clear' : '') + (overScene ? ' is-scene' : '') + (open ? ' is-open' : '')} ref={head}>
         <div className="m-wrap">
           <Link href="/" className="m-logo" aria-label="Lavigo Travel Co. home">
             <Image src={clear ? '/img/logo-white.webp' : '/img/logo-ink.webp'} alt="Lavigo Travel Co." width={288} height={105} priority style={{ height: 30, width: 'auto' }} />
