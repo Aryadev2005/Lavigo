@@ -81,3 +81,10 @@
 .lv-final-in .lv-final-h{display:block!important}
 .rv-wall .rv-score{display:flex;width:fit-content}
 .rv-wall .m-sec-h{align-items:flex-end}
+
+/* home photo wall: a compact bento of five (one large tile, four small), the rest open in the lightbox */
+.m-wall-bento{grid-auto-rows:clamp(160px,15vw,220px)}
+.m-wall-bento button{grid-row:span 1}
+.m-wall-bento button:first-child{grid-column:span 2;grid-row:span 2}
+.m-wall-more{position:absolute;inset:0;display:grid;place-items:center;background:rgba(29,22,51,.55);color:#fff;font-family:var(--m-head);font-size:clamp(20px,2vw,28px);font-weight:500;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);transition:background .25s}
+.m-wall-bento button:hover .m-wall-more{background:rgba(29,22,51,.4)}
