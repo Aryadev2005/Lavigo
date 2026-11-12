@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Fragment } from 'react'
 import type { DepartureCardData } from '@/components/UpcomingDepartures'
-import { DestinationJourney } from '@/components/DestinationJourney'
+import { Art } from '@/components/Art'
 import { PhotoWall } from '@/components/Gallery'
 import { Accent, FallingLeaves, HeroScene } from '@/components/HeroScene'
 import { Icon, type IconName } from '@/components/Icons'
@@ -12,6 +12,7 @@ import { Moments } from '@/components/Moments'
 import { ReviewWall } from '@/components/Reviews'
 import AnimatedContent from '@/components/AnimatedContent'
 import StarBorder from '@/components/StarBorder'
+import SpotlightCard from '@/components/SpotlightCard'
 import ScrollReveal from '@/components/ScrollReveal'
 import { Title } from '@/components/Title'
 import './home.css'
@@ -19,7 +20,7 @@ import { getReviews } from '@/lib/content'
 import { UpcomingDepartures } from '@/components/UpcomingDepartures'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
-import { addDays, fmtDate, inr, isoDate, todayISO } from '@/lib/format'
+import { addDays, inr, isoDate, todayISO } from '@/lib/format'
 import { PLAN_IMAGE, REELS } from '@/lib/media'
 import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
@@ -117,23 +118,39 @@ export default async function Home() {
         </section>
       )}
 
-      <section className="m-sec dj-intro">
+      <section className="m-sec" id="destinations">
         <div className="m-wrap">
-          <div className="m-sec-h"><div><Title text="Handpicked destinations"><span id="dj-h">Handpicked <em>destinations</em></span></Title><p>Scroll to travel through each place. Join a group departure or plan a private trip on your own dates.</p></div></div>
+          <div className="m-sec-h"><div><Title text="Handpicked destinations" /><p>Join a group departure or plan a private trip on your own dates.</p></div></div>
+          <AnimatedContent className="lv-dests" stagger={0.08} distance={30} duration={0.8}>
+            {dests.map((d) => {
+              const t = tripFor(d.slug)
+              const p = fromPrice(d.slug)
+              const cover = d.hero_image ?? t?.image ?? null
+              const nights = t?.nights ?? d.default_nights
+              return (
+                <SpotlightCard key={d.slug} theme="light" spotlightColor="#8A6FD1" intensity={0.5} spotlightSize={260} borderGlow={0.8} className="lv-dest" style={{ ['--spotlight-card-border' as string]: 'var(--lv-line)' }}>
+                  <Link href={t ? `/trips/${t.slug}` : `/plan?dest=${d.slug}`} className="lv-dest-in">
+                    <span className="lv-dest-pic">
+                      {cover
+                        ? <Image src={cover} alt="" fill sizes="(max-width:600px) 100vw, (max-width:1000px) 50vw, 33vw" style={{ objectFit: 'cover' }} />
+                        : <Art theme={d.theme} h={220} variant={1} id={'d' + d.slug} />}
+                      <span className="lv-dest-tag">{t ? 'Group trip' : 'Private trip'}</span>
+                    </span>
+                    <span className="lv-dest-body">
+                      <b>{d.name}</b>
+                      <small><Icon name="pin" size={14} />{d.area}</small>
+                      <span className="lv-dest-foot">
+                        <span>{nights} nights{p && <> · from <em>{inr(p)}</em></>}</span>
+                        <span className="ud-go" aria-hidden="true"><Icon name="arrow" size={16} /></span>
+                      </span>
+                    </span>
+                  </Link>
+                </SpotlightCard>
+              )
+            })}
+          </AnimatedContent>
         </div>
       </section>
-      <DestinationJourney stops={dests.map((d) => {
-        const t = tripFor(d.slug)
-        const p = fromPrice(d.slug)
-        const next = departures.find((x) => x.dest === d.slug)
-        const cover = d.hero_image ?? t?.image ?? null
-        const photos = [...(cover ? [{ src: cover, caption: d.name }] : []), ...(d.gallery ?? [])].filter((x, i, a) => a.findIndex((y) => y.src === x.src) === i).slice(0, 3)
-        return {
-          slug: d.slug, name: d.name, area: d.area, blurb: d.blurb, places: d.places ?? [], nights: t?.nights ?? d.default_nights,
-          href: t ? `/trips/${t.slug}` : `/plan?dest=${d.slug}`, plan: `/plan?dest=${d.slug}`, price: p ? inr(p) : null, cta: t ? 'See the trip' : 'Plan a private trip',
-          next: next ? fmtDate(next.date) : null, from: next?.startCity ?? null, photos,
-        }
-      })} />
 
       <section className="lv-moments" id="moments">
         <div className="m-wrap">

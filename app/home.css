@@ -88,3 +88,22 @@
 .m-wall-bento button:first-child{grid-column:span 2;grid-row:span 2}
 .m-wall-more{position:absolute;inset:0;display:grid;place-items:center;background:rgba(29,22,51,.55);color:#fff;font-family:var(--m-head);font-size:clamp(20px,2vw,28px);font-weight:500;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);transition:background .25s}
 .m-wall-bento button:hover .m-wall-more{background:rgba(29,22,51,.4)}
+
+/* ── handpicked destinations: light React Bits spotlight cards, same family as the departure rows ── */
+.lv-dests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+@media(max-width:900px){.lv-dests{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.lv-dests{grid-template-columns:1fr}}
+.spotlight-card.lv-dest{padding:8px;border-radius:22px;box-shadow:0 1px 2px rgba(29,22,51,.04),0 14px 30px -22px rgba(76,49,148,.45)!important;transition:translate .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
+.spotlight-card.lv-dest:hover{translate:0 -4px;box-shadow:0 1px 2px rgba(29,22,51,.04),0 22px 40px -22px rgba(76,49,148,.55)!important}
+.lv-dest-in{display:flex;flex-direction:column;height:100%;color:var(--lv-ink)}
+.lv-dest-pic{position:relative;display:block;height:220px;border-radius:16px;overflow:hidden;background:var(--lv-lav2)}
+.lv-dest-pic svg{position:absolute;inset:0;width:100%;height:100%}
+.lv-dest-pic img{transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.lv-dest:hover .lv-dest-pic img{transform:scale(1.05)}
+.lv-dest-tag{position:absolute;left:12px;top:12px;padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.92);color:var(--lv-violet);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.lv-dest-body{display:flex;flex-direction:column;gap:4px;flex:1;padding:14px 10px 8px}
+.lv-dest-body b{font-family:var(--m-head);font-weight:500;font-size:22px;line-height:1.2}
+.lv-dest-body small{display:inline-flex;align-items:center;gap:5px;font-size:13.5px;color:var(--lv-muted)}
+.lv-dest-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid var(--lv-line);font-size:13.5px;color:var(--lv-muted)}
+.lv-dest-foot em{font-style:normal;font-family:var(--m-head);font-size:17px;color:var(--lv-ink)}
+.lv-dest:hover .ud-go{background:var(--lv-violet);border-color:var(--lv-violet);color:#fff}

@@ -62,7 +62,7 @@ type Settings = {
   dpr?: number;
 };
 
-type TextureEntry = { texture: WebGLTexture | null; aspect: number; ready: number; loaded: boolean; videoSrc?: string; video?: HTMLVideoElement; live?: boolean };
+type TextureEntry = { texture: WebGLTexture | null; aspect: number; ready: number; loaded: boolean; videoSrc?: string; video?: HTMLVideoElement; live?: boolean; t?: number };
 
 type Point = { x: number; y: number };
 
@@ -577,6 +577,8 @@ const CircularGallery = ({
       entry.live = true;
       if (v.readyState < 2 || !v.videoWidth) return;
       playing = true;
+      if (v.currentTime === entry.t) return; // no new frame since the last upload (rAF runs faster than 30fps video)
+      entry.t = v.currentTime;
       gl.bindTexture(gl.TEXTURE_2D, entry.texture);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, v);
@@ -748,7 +750,9 @@ const CircularGallery = ({
       cards.forEach(card => {
         place(card);
         const entry = card.entry;
-        liveVideo(entry);
+        // only the centred or opened card plays; the rest show their poster (decoding + uploading every
+        // visible video each frame is what made phones stutter)
+        if (card.slot === state.active || card.focus > 0) liveVideo(entry);
         gl.bindTexture(gl.TEXTURE_2D, entry.texture || blank);
         gl.uniform1f(u.uImageAspect, entry.aspect);
         gl.uniform1f(u.uReady, entry.ready);
@@ -941,7 +945,9 @@ const CircularGallery = ({
       const s = settingsRef.current;
       view.width = Math.max(1, container.clientWidth);
       view.height = Math.max(1, container.clientHeight);
-      view.ratio = Math.min(s.dpr || window.devicePixelRatio || 1, 2);
+      // phones have 3x screens but weak GPUs: 1.5x keeps the canvas sharp enough at under half the pixels
+      const cap = window.matchMedia('(pointer: coarse)').matches ? 1.5 : 2;
+      view.ratio = Math.min(s.dpr || window.devicePixelRatio || 1, cap);
       canvas.width = Math.max(1, Math.round(view.width * view.ratio));
       canvas.height = Math.max(1, Math.round(view.height * view.ratio));
       const before = state.spacing;
