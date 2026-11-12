@@ -8,15 +8,18 @@ import { Icon, type IconName } from '@/components/Icons'
 import { HomeSearch } from '@/components/HomeSearch'
 import { JsonLd } from '@/components/JsonLd'
 import { Moments } from '@/components/Moments'
-import { ReviewStrip } from '@/components/Reviews'
+import { ReviewWall } from '@/components/Reviews'
+import AnimatedContent from '@/components/AnimatedContent'
+import StarBorder from '@/components/StarBorder'
 import ScrollReveal from '@/components/ScrollReveal'
 import { Title } from '@/components/Title'
+import './home.css'
 import { getReviews } from '@/lib/content'
 import { UpcomingDepartures } from '@/components/UpcomingDepartures'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
 import { addDays, fmtDate, inr, isoDate, todayISO } from '@/lib/format'
-import { ABOUT_IMAGE, PLAN_IMAGE, REELS } from '@/lib/media'
+import { PLAN_IMAGE, REELS } from '@/lib/media'
 import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
 
@@ -31,8 +34,17 @@ const TRUST: { t: string; s: string; c: 'lav' | 'sun'; i: IconName }[] = [
   { t: 'Trip leader on board', s: 'Every group departure', c: 'sun', i: 'leader' },
 ]
 
+const STEPS: { t: string; p: string; i: IconName }[] = [
+  { t: 'Choose a departure', p: 'Pick a fixed-date group trip, or plan a private one from your own city. Check the hotels, cars and itinerary first.', i: 'route' },
+  { t: 'Hold your seats', p: 'Add each traveller and tell us if we should book your tickets. Seats are held for 24 hours. Nothing to pay online.', i: 'ticket' },
+  { t: 'Confirm on WhatsApp', p: 'Pay the 25% advance on WhatsApp and we confirm. The balance is due before you travel.', i: 'chat' },
+]
+
+// the hero's jagged ridgeline, reused for every edge between light and dark on this page
+const EDGE = 'M0 90 L0 52 L90 30 L170 58 L260 18 L350 50 L430 34 L520 64 L610 26 L700 56 L790 40 L880 66 L970 22 L1060 54 L1150 36 L1240 62 L1330 28 L1420 56 L1510 38 L1600 58 L1600 90 Z'
+
 export default async function Home() {
-  const [dests, trips, site, reviews] = await Promise.all([getDestinations(), getTrips(), getSite(), getReviews(3)])
+  const [dests, trips, site, reviews] = await Promise.all([getDestinations(), getTrips(), getSite(), getReviews(12)])
   const { home, business } = site
   const FAQ = home.faqs
   const headLines = home.headline.split('\n').map((l) => l.trim()).filter(Boolean)
@@ -66,7 +78,7 @@ export default async function Home() {
         <HeroScene />
         <div className="m-wrap lv-hero-in">
           <p className="lv-badge"><span aria-hidden="true" />{home.kicker}</p>
-          <Title tag="h1" className="lv-h" text={home.headline} trigger="load" splitType="chars" mask={false} delay={55} duration={1.4} ease="power3.out" from={{ opacity: 0, y: 46, rotate: 6, filter: 'blur(12px)' }} to={{ opacity: 1, y: 0, rotate: 0, filter: 'blur(0px)' }} hoverEffect="lift" ignore=".lv-accent">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}<Accent text={l} /></span>)}</Title>
+          <Title tag="h1" className="lv-h" text={home.headline} trigger="load" splitType="chars" mask={false} delay={55} duration={1.4} ease="power3.out" from={{ opacity: 0, y: 46, rotate: 6, filter: 'blur(12px)' }} to={{ opacity: 1, y: 0, rotate: 0, filter: 'blur(0px)' }} hoverEffect="lift" ignore=".lv-accent">{headLines.map((l, i) => <span key={i}>{i > 0 && <br />}<Accent text={l} tone="light" /></span>)}</Title>
           <p className="lv-intro">{home.intro}</p>
           <div className="lv-ctas">
             <Link href="/trips" className="lv-pill">Explore trips <span aria-hidden="true"><Icon name="arrow" size={16} /></span></Link>
@@ -156,53 +168,85 @@ export default async function Home() {
         </section>
       )}
 
-      <section className="m-sec" id="plan">
+      {/* dark chapter: the custom planner and how booking works, between mountain edges */}
+      <section className="lv-chapter" id="plan">
+        <svg className="lv-cut lv-cut-top" viewBox="0 0 1600 90" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d={EDGE} /></svg>
         <div className="m-wrap">
-          <div className="m-band">
-            <div className="m-band-txt">
-              <p className="m-kicker">Custom trip planner</p>
+          <div className="lv-plan">
+            <div className="lv-plan-txt">
+              <p className="lv-eyebrow lv-eyebrow-l">Custom trip planner</p>
               <Title text="Your dates, your group, your pace." />
               <p>Start from your own city. Pick places, nights, hotels, cars and activities, see a day-by-day plan with an estimate, download it as a PDF and get the final quote on WhatsApp.</p>
               <div className="m-band-cta">
                 <Link href="/plan" className="m-btn-sun">Plan my trip</Link>
-                <a href={waLink('Hi Lavigo, I want to plan a private trip.')} target="_blank" rel="noopener" className="m-btn-ghost">Talk to us on WhatsApp</a>
+                <a href={waLink('Hi Lavigo, I want to plan a private trip.')} target="_blank" rel="noopener" className="m-btn-ghost lv-ghost-l">Talk to us on WhatsApp</a>
               </div>
             </div>
-            <div className="m-band-pic"><Image src={PLAN_IMAGE} alt="Rocky coast in Goa" fill sizes="(max-width:900px) 100vw, 45vw" style={{ objectFit: 'cover' }} /></div>
+            <AnimatedContent className="lv-plan-pic" distance={60} scale={0.94} blur={8} duration={1.1}>
+              <Image src={PLAN_IMAGE} alt="Rocky coast in Goa" fill sizes="(max-width:900px) 100vw, 45vw" style={{ objectFit: 'cover' }} />
+            </AnimatedContent>
+          </div>
+
+          <div className="lv-steps-h">
+            <Title text="Booking takes three steps" />
+            <p>No payment online. Your seats are held while we talk on WhatsApp.</p>
+          </div>
+          <div className="lv-steps">
+            <AnimatedContent className="lv-route" wipe="right" duration={1.6} ease="power2.inOut" animateOpacity={false} distance={0}>
+              <svg viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M20 20 C 180 -6, 320 46, 500 20 S 820 -6, 980 20" /></svg>
+            </AnimatedContent>
+            <AnimatedContent className="lv-steps-row" stagger={0.18} distance={40} blur={6} duration={0.9}>
+              {STEPS.map((s, i) => (
+                <div key={s.t} className="lv-step">
+                  <span className="lv-step-ic"><Icon name={s.i} size={24} /><i>{i + 1}</i></span>
+                  <h3>{s.t}</h3>
+                  <p>{s.p}</p>
+                </div>
+              ))}
+            </AnimatedContent>
           </div>
         </div>
+        <svg className="lv-cut lv-cut-bot" viewBox="0 0 1600 90" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d={EDGE} /></svg>
       </section>
 
-      <section className="m-sec">
-        <div className="m-wrap">
-          <div className="m-sec-h"><div><Title text="Booking takes three steps" /></div></div>
-          <div className="m-g3">
-            <div className="m-card m-step"><span>01</span><h3>Choose a departure</h3><p>Pick a fixed-date group trip, or plan a private one from your own city. Check the hotels, cars and itinerary first.</p></div>
-            <div className="m-card m-step"><span>02</span><h3>Hold your seats</h3><p>Add each traveller and tell us if we should book your tickets. Seats are held for 24 hours. Nothing to pay online.</p></div>
-            <div className="m-card m-step"><span>03</span><h3>Confirm on WhatsApp</h3><p>Pay the 25% advance on WhatsApp and we confirm. The balance is due before you travel.</p></div>
-          </div>
-        </div>
-      </section>
+      {/* only real, approved reviews, and only once there are enough to read like a wall */}
+      {reviews.length >= 3 && (
+        <section className="m-sec" id="reviews"><ReviewWall reviews={reviews} /></section>
+      )}
 
-      <section className="m-sec" id="reviews">
-        <div className="m-wrap"><ReviewStrip reviews={reviews} sub="Real reviews from travellers with a Lavigo account." /></div>
-      </section>
-
-      <section className="m-sec" id="about" style={{ paddingBottom: 64 }}>
-        <div className="m-wrap m-about">
-          <div className="m-card m-about-c">
-            <div className="m-about-pic"><Image src={ABOUT_IMAGE} alt="Lavigo travellers with the Lavigo banner at Phewa Lake, Pokhara" fill sizes="(max-width:900px) 100vw, 400px" style={{ objectFit: 'cover' }} /></div>
-            <div style={{ padding: 24 }}>
-              <Title className="m-h3" text="One team, trips for all of India" />
-              <p className="m-muted" style={{ marginTop: 8 }}>{BUSINESS.name} plans every trip from our office in Ranchi and welcomes travellers from any city. A Lavigo trip leader travels with each group from the first day to the last.</p>
-              <p className="m-sm" style={{ marginTop: 12 }}>{business.address}</p>
+      <section className="m-sec lv-faq" id="about">
+        <div className="m-wrap lv-faq-grid">
+          <div className="lv-faq-intro">
+            <p className="lv-eyebrow">Good to know</p>
+            <Title text="Common questions" />
+            <p>{BUSINESS.name} plans every trip from our office in Ranchi and welcomes travellers from any city. A Lavigo trip leader travels with each group from the first day to the last.</p>
+            <p className="lv-faq-addr"><Icon name="pin" size={16} />{business.address}</p>
+            <div className="lv-faq-links">
+              <Link href="/about" className="m-more">More about Lavigo <Icon name="arrow" size={18} /></Link>
+              <a href={waLink('Hi Lavigo, I have a question about a trip.')} target="_blank" rel="noopener" className="m-more">Ask us on WhatsApp <Icon name="arrow" size={18} /></a>
             </div>
           </div>
-          <div className="m-about-faq">
-            <Title className="m-h3 lv-faq-h" text="Common questions" />
+          <div className="lv-faq-list">
             {FAQ.map((f, i) => <details className="m-faq" key={f.q} open={i === 0}><summary>{f.q}</summary><p>{f.a}</p></details>)}
           </div>
         </div>
+      </section>
+
+      {/* closing band: the hero landscape again, leading straight into the footer */}
+      <section className="lv-final">
+        <svg className="lv-cut lv-cut-top" viewBox="0 0 1600 90" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d={EDGE} /></svg>
+        <div className="lv-final-scene" aria-hidden="true">
+          {['sky', 'peaks', 'hills'].map((n) => <Image key={n} src={'/img/hero/' + n + '.webp'} alt="" fill unoptimized className={'lv-final-' + n} />)}
+        </div>
+        <AnimatedContent className="m-wrap lv-final-in" stagger={0.12} distance={36} blur={6} duration={1}>
+          <p className="lv-eyebrow lv-eyebrow-l">Your next trip starts here</p>
+          <Title className="lv-final-h" text="Plan it with Lavigo" ignore=".lv-accent">Plan it with <Accent text="*Lavigo*" tone="light" /></Title>
+          <p className="lv-final-p">Join a group departure with a trip leader, or tell us your dates and we will plan a private trip from your city.</p>
+          <div className="lv-final-cta">
+            <StarBorder as="a" href="/plan" className="lv-star" color="#FFC56B" trailColor="#C9B5F4" duration={5} thickness={1.5} radius={999} glow={0.8} backgroundColor="#FFFFFF" textColor="#1D1633">Plan my trip</StarBorder>
+            <Link href="/trips" className="lv-pill lv-pill-ghost">See group departures <span aria-hidden="true"><Icon name="arrow" size={16} /></span></Link>
+          </div>
+        </AnimatedContent>
       </section>
     </div>
   )

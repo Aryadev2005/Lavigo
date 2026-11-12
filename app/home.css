@@ -1,0 +1,83 @@
+/* Home page, lower half: a dark "chapter" (planner + booking steps), the review wall, the FAQ,
+   and the closing band that leads into the footer. Light/dark sections meet on the hero's ridgeline. */
+
+/* shared: the jagged edge where a light section meets a dark one */
+.lv-cut{position:absolute;left:0;right:0;width:100%;height:84px;fill:var(--lv-bg);z-index:2;pointer-events:none;filter:drop-shadow(0 -12px 0 rgba(155,125,220,.55))}
+.lv-cut-top{top:-1px;transform:scaleY(-1)}
+.lv-cut-bot{bottom:-1px}
+.lv-eyebrow-l{color:var(--lv-lav)}
+
+/* ── dark chapter ── */
+.lv-chapter{position:relative;color:#fff;padding:150px 0 170px;margin-top:40px;overflow:hidden;
+  background:radial-gradient(60% 50% at 85% 20%,rgba(96,66,174,.55),transparent 70%),radial-gradient(50% 45% at 5% 85%,rgba(138,111,209,.28),transparent 70%),linear-gradient(180deg,#1D1633,#241B47)}
+.lv-plan{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(32px,5vw,72px);align-items:center}
+.lv-plan-txt h2{font-family:var(--m-head);font-weight:400;font-size:clamp(34px,4.2vw,56px);line-height:1.08;color:#fff;letter-spacing:-.02em}
+.lv-plan-txt>p:not(.lv-eyebrow){color:rgba(255,255,255,.76);font-size:16.5px;line-height:1.7;max-width:48ch;margin:18px 0 28px}
+.lv-ghost-l{color:#fff!important;border-color:rgba(255,255,255,.35)!important;background:transparent!important}
+.lv-ghost-l:hover{border-color:#fff!important}
+.lv-plan-pic{position:relative;aspect-ratio:5/4;border-radius:28px;overflow:hidden;box-shadow:0 40px 80px -40px rgba(0,0,0,.7),0 0 0 1px rgba(201,181,244,.15)}
+.lv-plan-pic:after{content:"";position:absolute;inset:0;background:linear-gradient(200deg,transparent 55%,rgba(29,22,51,.45))}
+
+.lv-steps-h{text-align:center;margin:clamp(80px,9vw,120px) auto 0;max-width:640px}
+.lv-steps-h h2{font-family:var(--m-head);font-weight:400;font-size:clamp(32px,3.6vw,48px);color:#fff;letter-spacing:-.02em}
+.lv-steps-h p{color:rgba(255,255,255,.7);margin-top:12px;font-size:16px}
+.lv-steps{position:relative;margin-top:56px}
+.lv-route{position:absolute;left:16%;right:16%;top:12px;height:40px;pointer-events:none}
+.lv-route svg{width:100%;height:100%;overflow:visible}
+.lv-route path{fill:none;stroke:var(--lv-lav);stroke-width:2;stroke-dasharray:2 11;stroke-linecap:round;opacity:.7}
+.lv-steps-row{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;text-align:center}
+.lv-step-ic{position:relative;display:inline-grid;place-items:center;width:68px;height:68px;border-radius:50%;color:var(--lv-lav);
+  background:radial-gradient(circle at 30% 25%,rgba(201,181,244,.28),rgba(29,22,51,.9) 70%);border:1px solid rgba(201,181,244,.35);box-shadow:0 0 0 8px rgba(29,22,51,.9),0 18px 40px -16px rgba(96,66,174,.9)}
+.lv-step-ic i{position:absolute;top:-4px;right:-6px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#FFC56B;color:#1D1633;font-style:normal;font-size:12px;font-weight:800}
+.lv-step h3{font-family:var(--m-head);font-weight:500;font-size:24px;margin:22px 0 10px;color:#fff}
+.lv-step p{color:rgba(255,255,255,.7);line-height:1.6;max-width:32ch;margin:0 auto}
+
+/* ── review wall ── */
+.rv-wall .m-sec-h{margin-bottom:22px}
+.rv-wall .rv-score{margin-top:12px}
+.rv-loop{margin-top:16px}
+.rv-loop .rv-card{width:360px;height:100%;white-space:normal;font-size:15px;line-height:1.55;text-align:left;margin:0}
+.rv-loop .rv-b{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ── FAQ ── */
+.lv-faq{padding-bottom:110px}
+.lv-faq-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.4fr);gap:clamp(32px,5vw,72px);align-items:start}
+.lv-faq-intro{position:sticky;top:calc(var(--head-h,76px) + 28px)}
+.lv-faq-intro h2{font-family:var(--m-head);font-weight:400;font-size:clamp(32px,3.4vw,46px);letter-spacing:-.02em;color:var(--lv-ink)}
+.lv-faq-intro>p:not(.lv-eyebrow){color:var(--lv-muted);line-height:1.7;margin-top:14px}
+.lv-faq-addr{display:flex;gap:8px;align-items:flex-start;font-size:13.5px!important}
+.lv-faq-addr svg{flex:none;margin-top:3px;color:var(--lv-violet)}
+.lv-faq-links{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+.lv-faq-list .m-faq{background:#fff;border:1px solid var(--lv-line);border-radius:16px;padding:18px 22px;margin-bottom:12px;transition:border-color .2s,box-shadow .2s}
+.lv-faq-list .m-faq[open]{border-color:rgba(96,66,174,.35);box-shadow:0 18px 40px -28px rgba(76,49,148,.45)}
+.lv-faq-list .m-faq summary{font-family:var(--m-head);font-weight:500;font-size:18px}
+
+/* ── closing band ── */
+.lv-final{position:relative;overflow:hidden;color:#fff;background:#17112A;padding:clamp(150px,16vw,200px) 0 clamp(110px,12vw,150px);text-align:center;isolation:isolate}
+.lv-final-scene{position:absolute;inset:0;z-index:-1}
+.lv-final-scene img{object-fit:cover;object-position:82% 100%}
+.lv-final-scene:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,17,42,.1) 0%,rgba(23,17,42,.35) 50%,#17112A 97%),radial-gradient(60% 60% at 50% 45%,rgba(23,17,42,.35),transparent 70%)}
+.lv-final-in{position:relative;z-index:1}
+.lv-final-h{font-family:var(--m-head);font-weight:400;font-size:clamp(46px,7vw,96px);line-height:1;letter-spacing:-.02em;color:#fff;text-shadow:0 4px 40px rgba(23,17,42,.45)}
+.lv-final-p{max-width:52ch;margin:22px auto 0;font-size:clamp(16px,1.4vw,18.5px);line-height:1.65;color:rgba(255,255,255,.86)}
+.lv-final-cta{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:14px;margin-top:34px}
+.lv-star{font-weight:700;font-size:15px;letter-spacing:.02em}
+@media (prefers-reduced-motion:no-preference){.lv-final-scene{animation:lv-final-drift 26s ease-in-out infinite alternate}}
+@keyframes lv-final-drift{from{transform:scale(1.04) translateY(0)}to{transform:scale(1.1) translateY(-1.5%)}}
+
+@media (max-width:900px){
+  .lv-plan,.lv-faq-grid{grid-template-columns:1fr}
+  .lv-steps-row{grid-template-columns:1fr;gap:40px}
+  .lv-route{display:none}
+  .lv-faq-intro{position:static}
+  .lv-final-scene img{object-position:68% 100%}
+}
+@media (max-width:560px){
+  .lv-chapter{padding:120px 0 130px}
+  .rv-loop .rv-card{width:300px}
+}
+/* stack the closing band's eyebrow, heading and copy (SplitText renders the heading inline-block) */
+.lv-final-in .lv-eyebrow{display:flex;justify-content:center;margin:0 0 20px}
+.lv-final-in .lv-final-h{display:block!important}
+.rv-wall .rv-score{display:flex;width:fit-content}
+.rv-wall .m-sec-h{align-items:flex-end}
