@@ -15,13 +15,13 @@ import './lavigo.css'
 import './premium.css'
 import './theme.css'
 
-// Body text is Plus Jakarta Sans. It keeps the old --font-outfit variable name so every existing rule picks it up.
-const outfit = localFont({ src: './fonts/jakarta-latin.woff2', variable: '--font-outfit', display: 'swap', weight: '200 800' })
-// Display serif. The weight range is capped at 600 so headings stay elegant even where older CSS asks for 800-900.
+// Body text is Manrope. It keeps the old --font-outfit variable name so every existing rule picks it up.
+const outfit = localFont({ src: './fonts/manrope-latin.woff2', variable: '--font-outfit', display: 'swap', weight: '200 800' })
+// Display serif is Playfair Display. The weight range is capped at 700 so headings stay elegant even where older CSS asks for 800-900.
 const fraunces = localFont({
   src: [
-    { path: './fonts/fraunces-latin.woff2', weight: '300 600', style: 'normal' },
-    { path: './fonts/fraunces-latin-italic.woff2', weight: '300 600', style: 'italic' },
+    { path: './fonts/playfair-latin.woff2', weight: '400 700', style: 'normal' },
+    { path: './fonts/playfair-latin-italic.woff2', weight: '400 700', style: 'italic' },
   ],
   variable: '--font-display',
   display: 'swap',
