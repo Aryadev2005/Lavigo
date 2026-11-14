@@ -117,7 +117,9 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       '@context': 'https://schema.org', '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-        { '@type': 'ListItem', position: 2, name: 'Group trips', item: `${SITE_URL}/trips` },
+        trip.destination
+          ? { '@type': 'ListItem', position: 2, name: trip.destination.name, item: `${SITE_URL}/destinations/${trip.destination.slug}` }
+          : { '@type': 'ListItem', position: 2, name: 'Group trips', item: `${SITE_URL}/trips` },
         { '@type': 'ListItem', position: 3, name: trip.title, item: url },
       ],
     },
@@ -128,7 +130,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       {jsonLd.map((d, i) => <JsonLd key={i} data={d} />)}
 
       <div className="m-wrap" style={{ paddingTop: 18 }}>
-        <nav className="m-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> › <Link href="/trips">Group trips</Link> › {trip.destination?.name ?? trip.title}</nav>
+        <nav className="m-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> › {trip.destination ? <Link href={`/destinations/${trip.destination.slug}`}>{trip.destination.name}</Link> : <Link href="/trips">Group trips</Link>} › {trip.title}</nav>
         <div className="m-td-head">
           <div>
             <div className="m-chips" style={{ marginBottom: 8 }}>

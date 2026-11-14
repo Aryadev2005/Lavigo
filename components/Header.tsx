@@ -11,6 +11,7 @@ import { useMe } from './useMe'
 const tabs: { href: string; label: string; icon: IconName; match: (p: string, q: string) => boolean }[] = [
   { href: '/', label: 'Home', icon: 'grid', match: (p) => p === '/' },
   { href: '/trips', label: 'Group Trips', icon: 'group', match: (p, q) => p.startsWith('/trips') && !q.includes('weekend') },
+  { href: '/destinations', label: 'Destinations', icon: 'globe', match: (p) => p.startsWith('/destinations') },
   { href: '/trips?d=weekend', label: 'Weekend', icon: 'weekend', match: (p, q) => p.startsWith('/trips') && q.includes('weekend') },
   { href: '/plan', label: 'Custom Trip', icon: 'route', match: (p) => p.startsWith('/plan') },
   { href: '/blog', label: 'Travel Stories', icon: 'vlog', match: (p) => p.startsWith('/blog') },

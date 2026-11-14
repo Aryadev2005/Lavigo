@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL } from '@/lib/config'
 import { getPosts } from '@/lib/content'
-import { getTrips } from '@/lib/data'
+import { getDestinations, getTrips } from '@/lib/data'
 
 export const revalidate = 3600
 
@@ -10,11 +10,13 @@ export const revalidate = 3600
 // lastModified is only given where the date is real (blog posts); Google ignores a lastmod that
 // changes on every build, so the other pages leave it out.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [trips, posts] = await Promise.all([getTrips(), getPosts().catch(() => [])])
+  const [trips, posts, dests] = await Promise.all([getTrips(), getPosts(), getDestinations()])
   const page = (path: string, priority: number, changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']) =>
     ({ url: `${SITE_URL}${path}`, changeFrequency, priority })
   return [
     page('/', 1, 'weekly'),
+    page('/destinations', 0.9, 'weekly'),
+    ...dests.map((d) => page(`/destinations/${d.slug}`, 0.85, 'weekly')),
     page('/trips', 0.9, 'daily'),
     ...trips.map((t) => page(`/trips/${t.slug}`, 0.8, 'weekly')),
     page('/plan', 0.7, 'monthly'),

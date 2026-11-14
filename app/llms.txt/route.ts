@@ -24,6 +24,9 @@ export async function GET() {
     '- Each booking records every traveller\'s name and gender, and whether Lavigo or the traveller books the train or flight tickets.',
     '- Trip pages list the hotels and cars used, and every itinerary can be downloaded as a PDF.',
     '',
+    '## Destinations',
+    ...dests.map((d) => `- [${d.name}](${SITE_URL}/destinations/${d.slug}): ${d.area}. ${d.blurb}`),
+    '',
     '## Group trips',
   ]
   for (const t of trips) {
