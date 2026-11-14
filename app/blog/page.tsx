@@ -4,13 +4,14 @@ import Link from 'next/link'
 import { Icon } from '@/components/Icons'
 import { getPosts, readMinutes } from '@/lib/content'
 import { fmtDate } from '@/lib/format'
+import { pageMeta } from '@/lib/seo'
 
 export const revalidate = 60
-export const metadata: Metadata = {
-  title: 'Travel stories',
-  description: 'Stories, photos and videos from Lavigo trips to Nepal, Sikkim, Darjeeling and beyond.',
-  alternates: { canonical: '/blog' },
-}
+export const metadata: Metadata = pageMeta({
+  title: 'Travel stories from Nepal, Sikkim and Darjeeling',
+  description: 'Stories, photos and videos from Lavigo group trips to Nepal, Sikkim, Darjeeling and beyond: what the days were like, where we stayed and what to expect.',
+  path: '/blog',
+})
 
 export default async function Blog() {
   const posts = await getPosts()

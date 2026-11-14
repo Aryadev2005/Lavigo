@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Fragment } from 'react'
@@ -22,10 +23,17 @@ import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
 import { addDays, inr, isoDate, todayISO } from '@/lib/format'
 import { PLAN_IMAGE, REELS } from '@/lib/media'
+import { pageMeta } from '@/lib/seo'
 import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
+export const metadata: Metadata = pageMeta({
+  title: 'Lavigo Travel Co. | Group trips to Nepal, Sikkim & Darjeeling',
+  absoluteTitle: true,
+  description: 'Group trips from Ranchi and across India to Nepal, Darjeeling, North Sikkim and Netarhat, plus custom holidays to Puri and Goa. Trip leader on every departure.',
+  path: '/',
+})
 
 const FALLBACK: [string, string, string] = ['#3A0CA3', '#4CC9F0', '#F1FAEE']
 
@@ -73,7 +81,7 @@ export default async function Home() {
   return (
     <div className="m-page lv-home">
       <JsonLd data={{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }} />
-      <JsonLd data={{ '@context': 'https://schema.org', '@type': 'WebSite', url: SITE_URL, name: BUSINESS.name }} />
+      <JsonLd data={{ '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: SITE_URL, name: BUSINESS.name, alternateName: 'Lavigo', inLanguage: 'en-IN', publisher: { '@id': `${SITE_URL}/#agency` } }} />
 
       <FallingLeaves />
       <section className="lv-hero">

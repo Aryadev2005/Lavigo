@@ -3,14 +3,15 @@ import Link from 'next/link'
 import { Icon } from '@/components/Icons'
 import { ReviewCard, Stars } from '@/components/Reviews'
 import { getReviews, reviewStats } from '@/lib/content'
+import { pageMeta } from '@/lib/seo'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
-export const metadata: Metadata = {
-  title: 'Reviews',
-  description: 'What travellers say about their Lavigo group trips and custom holidays.',
-  alternates: { canonical: '/reviews' },
-}
+export const metadata: Metadata = pageMeta({
+  title: 'Traveller reviews',
+  description: 'Real reviews from travellers on Lavigo group trips and custom holidays to Nepal, Sikkim, Darjeeling and more. Written by travellers with a Lavigo account.',
+  path: '/reviews',
+})
 
 export default async function ReviewsPage() {
   const reviews = await getReviews(120)

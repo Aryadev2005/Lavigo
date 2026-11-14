@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { Legal } from '@/components/Legal'
 import { getSite } from '@/lib/site'
 import { BUSINESS } from '@/lib/config'
-export const metadata: Metadata = { title: 'Privacy policy', alternates: { canonical: '/privacy' } }
+export const metadata: Metadata = pageMeta({ title: 'Privacy policy', description: 'How Lavigo Travel Co. collects, uses and protects the details you share when you enquire or book a trip.', path: '/privacy' })
 export default async function Privacy() {
   const { business: biz } = await getSite()
   return (

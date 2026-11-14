@@ -5,14 +5,15 @@ import { tripChips } from '@/components/TripCard'
 import { TripsBrowser, type Row } from '@/components/TripsBrowser'
 import { SITE_URL } from '@/lib/config'
 import { getTrips } from '@/lib/data'
+import { pageMeta } from '@/lib/seo'
 import { fmtDate } from '@/lib/format'
 
 export const revalidate = 60
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Group trips across India',
-  description: 'Fixed-date group trips to Nepal, Darjeeling, Sikkim and Netarhat from cities across India. Trip leader on every departure, hotels and cars listed, prices with GST, seats held online.',
-  alternates: { canonical: '/trips' },
-}
+  description: 'Fixed-date group trips to Nepal, Darjeeling, Sikkim and Netarhat. Trip leader on every departure, hotels and cars listed, prices with GST, seats held online.',
+  path: '/trips',
+})
 
 const FALLBACK: [string, string, string] = ['#3A0CA3', '#4CC9F0', '#F1FAEE']
 

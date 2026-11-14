@@ -8,15 +8,16 @@ import { ReviewStrip } from '@/components/Reviews'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getReviews } from '@/lib/content'
 import { TRIP_PHOTOS } from '@/lib/media'
+import { pageMeta } from '@/lib/seo'
 import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'About us',
   description: 'Lavigo Travel Co. plans group trips and private holidays from Ranchi for travellers from every city in India. Meet the founder, Lucky Thapa.',
-  alternates: { canonical: '/about' },
-}
+  path: '/about',
+})
 
 const ICONS: IconName[] = ['route', 'leader', 'rupee', 'pin', 'shield', 'hotel']
 

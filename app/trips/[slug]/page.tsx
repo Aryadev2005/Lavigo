@@ -15,6 +15,7 @@ import { seatLabel, tripChips } from '@/components/TripCard'
 import { ADVANCE, BUSINESS, CHILD_FACTOR, GST, HOLD_HOURS, SITE_URL } from '@/lib/config'
 import { getReviews, reviewStats } from '@/lib/content'
 import { getDestinations, getTripBySlug, getTrips } from '@/lib/data'
+import { absUrl, pageMeta, snippet } from '@/lib/seo'
 import { addDays, fmtDate, inr } from '@/lib/format'
 import type { GalleryImage } from '@/lib/types'
 import { TIER_LABEL, stars } from '@/lib/stays'
@@ -30,14 +31,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const trip = await getTripBySlug((await params).slug)
   if (!trip) return {}
   const dep = trip.departures[0]
-  const story = (trip.story ?? '').trim().split(/\n{2,}/)[0]?.slice(0, 160)
-  const desc = (story ? `${story} ` : '') + `${trip.title}: ${trip.nights}N/${trip.nights + 1}D group trip${dep ? ` starting from ${dep.start_city}` : ''}. ${trip.route}.` + (dep ? ` From ${inr(dep.price)} per person incl. GST, next departure ${fmtDate(dep.depart_date, { day: 'numeric', month: 'long', year: 'numeric' })}.` : '')
-  return {
-    title: trip.title,
-    description: desc,
-    alternates: { canonical: `/trips/${trip.slug}` },
-    openGraph: { title: trip.title, description: desc, url: `/trips/${trip.slug}`, images: trip.image ? [{ url: trip.image }] : undefined },
-  }
+  // Search snippets cut off around 155 characters, so the facts people compare on (length, start city,
+  // price, date) come first and the story only fills what is left.
+  const facts = `${trip.nights}N/${trip.nights + 1}D group trip${dep ? ` from ${dep.start_city}` : ''}` + (dep ? `, ${inr(dep.price)} per person incl. GST. Next departure ${fmtDate(dep.depart_date, { day: 'numeric', month: 'short', year: 'numeric' })}.` : '.')
+  const about = (trip.summary || (trip.story ?? '').trim().split(/\n{2,}/)[0] || trip.route || '').trim()
+  const desc = snippet(`${facts} ${about}`)
+  return pageMeta({ title: trip.title, description: desc, path: `/trips/${trip.slug}`, image: trip.image, imageAlt: trip.title })
 }
 
 export default async function TripPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -100,7 +99,7 @@ export default async function TripPage({ params }: { params: Promise<{ slug: str
       name: trip.title,
       description: trip.summary,
       url,
-      image: trip.image ? `${SITE_URL}${trip.image}` : undefined,
+      image: photos.length ? photos.slice(0, 6).map((g) => absUrl(g.src)) : undefined,
       touristType: 'Group travellers',
       provider: { '@id': `${SITE_URL}/#agency` },
       itinerary: { '@type': 'ItemList', itemListElement: trip.itinerary.map((d, i) => ({ '@type': 'ListItem', position: i + 1, name: d.title, description: d.description || d.text })) },
