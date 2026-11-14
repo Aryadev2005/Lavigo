@@ -15,7 +15,10 @@ export const BUSINESS = {
   gstin: '', // TODO: owner's GSTIN
 } as const
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://lavigo.in').replace(/\/$/, '')
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://lavigo.in').trim().replace(/\/$/, '')
+
+// Google may index the site only when ALLOW_INDEXING is "true" (case, spaces and a pasted line break are ignored).
+export const INDEXABLE = (process.env.ALLOW_INDEXING ?? '').trim().toLowerCase() === 'true'
 
 // Pricing rules (match the prototype)
 export const GST = 0.05

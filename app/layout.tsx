@@ -6,7 +6,7 @@ import { Header } from '@/components/Header'
 import { JsonLd } from '@/components/JsonLd'
 import { SmoothScroll } from '@/components/Lenis'
 import { WhatsAppFab } from '@/components/WhatsAppFab'
-import { BUSINESS, SITE_URL } from '@/lib/config'
+import { BUSINESS, INDEXABLE, SITE_URL } from '@/lib/config'
 import { DEFAULT_OG } from '@/lib/seo'
 import { getSite } from '@/lib/site'
 import 'lenis/dist/lenis.css'
@@ -29,7 +29,7 @@ const fraunces = localFont({
 })
 const italiana = localFont({ src: './fonts/italiana.woff2', variable: '--font-italiana', display: 'swap', weight: '400' })
 
-const indexable = process.env.ALLOW_INDEXING === 'true' // flip to true on launch day
+const indexable = INDEXABLE // ALLOW_INDEXING=true in Vercel
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
