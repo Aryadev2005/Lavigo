@@ -20,7 +20,7 @@ export async function Footer() {
             <h4>Trips</h4>
             <Link href="/trips">Group trips</Link>
             <Link href="/plan">Custom trip planner</Link>
-            <Link href="/#destinations">Destinations</Link>
+            <Link href="/destinations">Destinations</Link>
             <Link href="/#moments">Trip vlogs</Link>
           </div>
           <div>

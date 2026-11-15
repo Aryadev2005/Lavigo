@@ -8,6 +8,7 @@ import { StoryMedia } from '@/components/StoryMedia'
 import { BUSINESS, SITE_URL } from '@/lib/config'
 import { blocks, getPost, getPosts, readMinutes } from '@/lib/content'
 import { fmtDate } from '@/lib/format'
+import { absUrl, pageMeta, snippet } from '@/lib/seo'
 import { dbConfigured, publicClient } from '@/lib/supabase'
 
 export const revalidate = 60
@@ -16,7 +17,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const p = await getPost(slug)
   if (!p) return { title: 'Story not found' }
-  return { title: p.title, description: p.excerpt || undefined, alternates: { canonical: `/blog/${p.slug}` }, openGraph: { type: 'article', images: p.cover ? [p.cover] : undefined } }
+  return pageMeta({
+    title: p.title, description: snippet(p.excerpt || p.body), path: `/blog/${p.slug}`, image: p.cover, type: 'article',
+    publishedTime: p.published_at ?? p.created_at,
+  })
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -44,9 +48,17 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     <article className="bp">
       <JsonLd data={{
         '@context': 'https://schema.org', '@type': 'BlogPosting', headline: p.title, description: p.excerpt,
-        image: p.cover ? [p.cover.startsWith('http') ? p.cover : SITE_URL + p.cover] : undefined,
+        image: p.cover ? [absUrl(p.cover)] : undefined, inLanguage: 'en-IN',
         datePublished: p.published_at ?? p.created_at.slice(0, 10), mainEntityOfPage: `${SITE_URL}/blog/${p.slug}`,
-        author: { '@type': 'Organization', name: BUSINESS.name }, publisher: { '@id': `${SITE_URL}/#agency` },
+        author: { '@type': 'Organization', name: BUSINESS.name, url: SITE_URL }, publisher: { '@id': `${SITE_URL}/#agency` },
+      }} />
+      <JsonLd data={{
+        '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Travel stories', item: `${SITE_URL}/blog` },
+          { '@type': 'ListItem', position: 3, name: p.title, item: `${SITE_URL}/blog/${p.slug}` },
+        ],
       }} />
       <header className="bp-hero">
         {p.cover && <Image src={p.cover} alt="" fill priority sizes="100vw" style={{ objectFit: 'cover' }} />}

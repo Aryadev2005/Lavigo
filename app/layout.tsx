@@ -6,7 +6,8 @@ import { Header } from '@/components/Header'
 import { JsonLd } from '@/components/JsonLd'
 import { SmoothScroll } from '@/components/Lenis'
 import { WhatsAppFab } from '@/components/WhatsAppFab'
-import { BUSINESS, SITE_URL } from '@/lib/config'
+import { BUSINESS, INDEXABLE, SITE_URL } from '@/lib/config'
+import { DEFAULT_OG } from '@/lib/seo'
 import { getSite } from '@/lib/site'
 import 'lenis/dist/lenis.css'
 import './globals.css'
@@ -28,17 +29,18 @@ const fraunces = localFont({
 })
 const italiana = localFont({ src: './fonts/italiana.woff2', variable: '--font-italiana', display: 'swap', weight: '400' })
 
-const indexable = process.env.ALLOW_INDEXING === 'true' // flip to true on launch day
+const indexable = INDEXABLE // ALLOW_INDEXING=true in Vercel
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: 'Lavigo Travel Co. · Group & custom trips from anywhere in India', template: '%s | Lavigo Travel Co.' },
   description: 'Group trips and custom holidays from anywhere in India to Nepal, Darjeeling, Sikkim, Netarhat, Puri and Goa. Fixed departures with a trip leader, hotels and cars listed, downloadable itineraries, bookings on WhatsApp.',
   applicationName: 'Lavigo Travel Co.',
-  openGraph: { type: 'website', siteName: 'Lavigo Travel Co.', locale: 'en_IN', url: SITE_URL, images: [{ url: '/img/trip-nepal.webp', width: 1600, height: 1068, alt: 'Lavigo Travel Co. group trips' }] },
-  twitter: { card: 'summary_large_image' },
-  robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
-  alternates: { canonical: '/' },
+  openGraph: { type: 'website', siteName: 'Lavigo Travel Co.', locale: 'en_IN', images: [DEFAULT_OG] },
+  twitter: { card: 'summary_large_image', images: [DEFAULT_OG.url] },
+  robots: indexable ? { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } } : { index: false, follow: false },
+  formatDetection: { telephone: false },
+  // canonical URLs are set per page (lib/seo.ts pageMeta); a canonical here would leak '/' onto every page
 }
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F4EEFD' }
 

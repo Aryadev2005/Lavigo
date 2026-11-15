@@ -4,13 +4,14 @@ import { EnquiryForm } from '@/components/EnquiryForm'
 import { Planner } from '@/components/Planner'
 import { getDestinations } from '@/lib/data'
 import { todayISO } from '@/lib/format'
+import { pageMeta } from '@/lib/seo'
 
 export const revalidate = 60
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Plan a custom trip from your city',
-  description: 'Build your own trip from anywhere in India: choose your starting city, places, nights, hotels, cars and activities. See a day-by-day plan and a price estimate, then download the itinerary.',
-  alternates: { canonical: '/plan' },
-}
+  description: 'Build a private trip from any city in India: pick places, nights, hotels and cars, see a day-by-day plan with a price estimate, and download the itinerary.',
+  path: '/plan',
+})
 
 export default async function Plan({ searchParams }: { searchParams: Promise<{ dest?: string; date?: string; pax?: string; from?: string }> }) {
   const [dests, sp] = await Promise.all([getDestinations(), searchParams])

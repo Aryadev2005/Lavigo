@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { Legal } from '@/components/Legal'
 import { BUSINESS } from '@/lib/config'
-export const metadata: Metadata = { title: 'Cancellation and refund policy', alternates: { canonical: '/refund-policy' } }
+export const metadata: Metadata = pageMeta({ title: 'Cancellation and refund policy', description: 'Cancellation charges and refund timelines for Lavigo Travel Co. group trips and custom holidays.', path: '/refund-policy' })
 // NOTE: exact refund slabs must come from the owner. Update this page (and add the slab table) before payments go live.
 export default function Refunds() {
   return (

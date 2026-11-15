@@ -1,8 +1,8 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Fragment } from 'react'
 import type { DepartureCardData } from '@/components/UpcomingDepartures'
-import { Art } from '@/components/Art'
 import { PhotoWall } from '@/components/Gallery'
 import { Accent, FallingLeaves, HeroScene } from '@/components/HeroScene'
 import { Icon, type IconName } from '@/components/Icons'
@@ -12,7 +12,7 @@ import { Moments } from '@/components/Moments'
 import { ReviewWall } from '@/components/Reviews'
 import AnimatedContent from '@/components/AnimatedContent'
 import StarBorder from '@/components/StarBorder'
-import SpotlightCard from '@/components/SpotlightCard'
+import { DestinationCard } from '@/components/DestinationCard'
 import ScrollReveal from '@/components/ScrollReveal'
 import { Title } from '@/components/Title'
 import './home.css'
@@ -22,10 +22,17 @@ import { BUSINESS, SITE_URL } from '@/lib/config'
 import { getDestinations, getTrips } from '@/lib/data'
 import { addDays, inr, isoDate, todayISO } from '@/lib/format'
 import { PLAN_IMAGE, REELS } from '@/lib/media'
+import { pageMeta } from '@/lib/seo'
 import { getSite } from '@/lib/site'
 import { waLink } from '@/lib/whatsapp'
 
 export const revalidate = 60
+export const metadata: Metadata = pageMeta({
+  title: 'Lavigo Travel Co. | Group trips to Nepal, Sikkim & Darjeeling',
+  absoluteTitle: true,
+  description: 'Group trips from Ranchi and across India to Nepal, Darjeeling, North Sikkim and Netarhat, plus custom holidays to Puri and Goa. Trip leader on every departure.',
+  path: '/',
+})
 
 const FALLBACK: [string, string, string] = ['#3A0CA3', '#4CC9F0', '#F1FAEE']
 
@@ -73,7 +80,7 @@ export default async function Home() {
   return (
     <div className="m-page lv-home">
       <JsonLd data={{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }} />
-      <JsonLd data={{ '@context': 'https://schema.org', '@type': 'WebSite', url: SITE_URL, name: BUSINESS.name }} />
+      <JsonLd data={{ '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: SITE_URL, name: BUSINESS.name, alternateName: 'Lavigo', inLanguage: 'en-IN', publisher: { '@id': `${SITE_URL}/#agency` } }} />
 
       <FallingLeaves />
       <section className="lv-hero">
@@ -120,32 +127,12 @@ export default async function Home() {
 
       <section className="m-sec" id="destinations">
         <div className="m-wrap">
-          <div className="m-sec-h"><div><Title text="Handpicked destinations" /><p>Join a group departure or plan a private trip on your own dates.</p></div></div>
+          <div className="m-sec-h"><div><Title text="Handpicked destinations" /><p>Join a group departure or plan a private trip on your own dates.</p></div><Link href="/destinations" className="m-more">All destinations <Icon name="arrow" size={18} /></Link></div>
           <AnimatedContent className="lv-dests" stagger={0.08} distance={30} duration={0.8}>
             {dests.map((d) => {
               const t = tripFor(d.slug)
-              const p = fromPrice(d.slug)
-              const cover = d.hero_image ?? t?.image ?? null
-              const nights = t?.nights ?? d.default_nights
               return (
-                <SpotlightCard key={d.slug} theme="light" spotlightColor="#8A6FD1" intensity={0.5} spotlightSize={260} borderGlow={0.8} className="lv-dest" style={{ ['--spotlight-card-border' as string]: 'var(--lv-line)' }}>
-                  <Link href={t ? `/trips/${t.slug}` : `/plan?dest=${d.slug}`} className="lv-dest-in">
-                    <span className="lv-dest-pic">
-                      {cover
-                        ? <Image src={cover} alt="" fill sizes="(max-width:600px) 100vw, (max-width:1000px) 50vw, 33vw" style={{ objectFit: 'cover' }} />
-                        : <Art theme={d.theme} h={220} variant={1} id={'d' + d.slug} />}
-                      <span className="lv-dest-tag">{t ? 'Group trip' : 'Private trip'}</span>
-                    </span>
-                    <span className="lv-dest-body">
-                      <b>{d.name}</b>
-                      <small><Icon name="pin" size={14} />{d.area}</small>
-                      <span className="lv-dest-foot">
-                        <span>{nights} nights{p && <> · from <em>{inr(p)}</em></>}</span>
-                        <span className="ud-go" aria-hidden="true"><Icon name="arrow" size={16} /></span>
-                      </span>
-                    </span>
-                  </Link>
-                </SpotlightCard>
+                <DestinationCard key={d.slug} d={d} cover={d.hero_image ?? t?.image ?? null} nights={t?.nights ?? d.default_nights} fromPrice={fromPrice(d.slug)} hasGroupTrip={Boolean(t?.departures.length)} />
               )
             })}
           </AnimatedContent>

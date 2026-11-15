@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { Legal } from '@/components/Legal'
 import { getSite } from '@/lib/site'
 import { BUSINESS, HOLD_HOURS } from '@/lib/config'
-export const metadata: Metadata = { title: 'Terms of booking', alternates: { canonical: '/terms' } }
+export const metadata: Metadata = pageMeta({ title: 'Terms of booking', description: 'Booking terms for Lavigo Travel Co. group trips and custom holidays: seat holds, advance payment, balance, changes and travel documents.', path: '/terms' })
 export default async function Terms() {
   const { business: biz } = await getSite()
   return (
