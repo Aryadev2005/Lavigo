@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { authClient } from '@/lib/admin-auth'
-import { saveProfile } from '@/lib/customer'
+import { saveProfile, verifyPhoneUrl } from '@/lib/customer'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,5 +18,5 @@ export async function GET(req: NextRequest) {
   const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>
   const name = String(meta.full_name || meta.name || '')
   await saveProfile({ id: data.user.id, email: data.user.email ?? '', ...(name ? { name } : {}) }, true)
-  return back(next)
+  return back(verifyPhoneUrl(next)) // passes straight through when already verified
 }

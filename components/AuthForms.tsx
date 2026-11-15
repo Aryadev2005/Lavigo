@@ -28,7 +28,18 @@ export function AuthForms({ next, initial = 'in', error }: { next: string; initi
   const [upState, upAction, upBusy] = useActionState(signUpCustomer, {})
   const [rsState, rsAction, rsBusy] = useActionState(sendPasswordReset, {})
 
+  const [h, em, sub] = mode === 'up'
+    ? ['Start your', 'journey.', 'Create your Lavigo account to book group trips and keep every itinerary in one place.']
+    : mode === 'reset'
+      ? ['Reset your', 'password.', 'We will email you a link to set a new one.']
+      : next.startsWith('/trips/')
+        ? ['Sign in to', 'book your seats.', 'Use Google or your email. It takes a few seconds.']
+        : ['Welcome', 'back.', 'Sign in to see your trips, itineraries and payments.']
+
   return (
+    <>
+    <h1 className="au-h">{h} <em>{em}</em></h1>
+    <p className="au-sub">{sub}</p>
     <div className="au-card">
       {mode !== 'reset' && (
         <div className="au-tabs" role="tablist" aria-label="Sign in or create an account">
@@ -79,8 +90,6 @@ export function AuthForms({ next, initial = 'in', error }: { next: string; initi
 
       {mode === 'reset' && (
         <form onSubmit={keepForm(rsAction)} className="au-form">
-          <h2 className="au-h2">Reset your password</h2>
-          <p className="au-fine">Enter the email you signed up with and we&apos;ll send you a link to set a new password.</p>
           <label className="au-l" htmlFor="au-email3">Email</label>
           <input className="au-in" id="au-email3" name="email" type="email" autoComplete="email" required />
           <Note s={rsState} />
@@ -89,5 +98,6 @@ export function AuthForms({ next, initial = 'in', error }: { next: string; initi
         </form>
       )}
     </div>
+    </>
   )
 }

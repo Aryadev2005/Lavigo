@@ -92,9 +92,17 @@ export function BookingForm({ departures, whatsappHref }: { departures: DepOptio
           <a className="bkf-gate-wa" href={whatsappHref} target="_blank" rel="noopener">Or ask a question on WhatsApp</a>
         </div>
       )}
+      {me.user && !me.user.phoneVerified && (
+        <div className="bkf-gate">
+          <span className="bkf-gate-ic" aria-hidden="true"><Icon name="user" size={22} /></span>
+          <b>Verify your WhatsApp number</b>
+          <p>We send your booking confirmation and trip updates on WhatsApp. It takes a few seconds.</p>
+          <Link className="bkf-submit" href={`/verify-phone?next=${encodeURIComponent(path)}`}>Verify my number</Link>
+        </div>
+      )}
       {me.loading && <div className="bkf-gate bkf-gate-skel" aria-hidden="true" />}
 
-      {me.user && <>
+      {me.user?.phoneVerified && <>
       <p className="bkf-who">Booking as <b>{me.user.email}</b></p>
       <fieldset className="bkf-sec">
         <div className="bkf-row">

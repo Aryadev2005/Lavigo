@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { authClient, authConfigured } from './admin-auth'
 import { adminClient, writesConfigured } from './supabase'
 
-export type Customer = { id: string; email: string; name: string; phone: string }
+export type Customer = { id: string; email: string; name: string; phone: string; phoneVerified: boolean }
 
 /** The signed-in customer (any Supabase Auth user), with their saved name and phone. Null when signed out. */
 export async function getCustomer(): Promise<Customer | null> {
@@ -15,24 +15,28 @@ export async function getCustomer(): Promise<Customer | null> {
   const meta = (u.user_metadata ?? {}) as Record<string, unknown>
   let name = String(meta.full_name || meta.name || '')
   let phone = ''
+  let phoneVerified = !writesConfigured // demo mode has no profiles table to verify against
   if (writesConfigured) {
     try {
-      const { data: p, error } = await adminClient().from('profiles').select('full_name,phone').eq('id', u.id).maybeSingle()
-      if (!error && p) { name = p.full_name || name; phone = p.phone || '' }
+      const { data: p, error } = await adminClient().from('profiles').select('*').eq('id', u.id).maybeSingle()
+      if (!error && p) { name = p.full_name || name; phone = p.phone || ''; phoneVerified = Boolean(p.phone_verified_at) }
     } catch { /* profiles table not there yet (migration 008) */ }
   }
-  return { id: u.id, email: u.email ?? '', name, phone }
+  return { id: u.id, email: u.email ?? '', name, phone, phoneVerified }
 }
 
-/** Use at the top of pages that need an account; sends visitors to sign in and back again. */
+/** Use at the top of pages that need an account; sends visitors to sign in (and verify their number) and back again. */
 export async function requireCustomer(next: string): Promise<Customer> {
   const c = await getCustomer()
   if (!c) redirect(`/login?next=${encodeURIComponent(next)}`)
+  if (!c.phoneVerified) redirect(verifyPhoneUrl(next))
   return c
 }
 
-/** Create or update the customer's profile row. Quietly does nothing before migration 008. */
-export async function saveProfile(c: { id: string; email: string; name?: string; phone?: string }, keepName = false) {
+export const verifyPhoneUrl = (next: string) => `/verify-phone?next=${encodeURIComponent(next)}`
+
+/** Create or update the customer's profile row. The phone number is only ever set by verify_phone_otp (migration 009). Quietly does nothing before migration 008. */
+export async function saveProfile(c: { id: string; email: string; name?: string }, keepName = false) {
   if (!writesConfigured) return
   if (keepName && c.name !== undefined) {
     // sign-in from Google / email link: don't overwrite a name the customer has already edited
@@ -43,7 +47,6 @@ export async function saveProfile(c: { id: string; email: string; name?: string;
   }
   const row: Record<string, unknown> = { id: c.id, email: c.email, updated_at: new Date().toISOString() }
   if (c.name !== undefined) row.full_name = c.name.slice(0, 80)
-  if (c.phone !== undefined) row.phone = c.phone.slice(0, 15)
   try {
     const { error } = await adminClient().from('profiles').upsert(row, { onConflict: 'id' })
     if (error && !/profiles/.test(error.message)) console.error('saveProfile failed', error.message)

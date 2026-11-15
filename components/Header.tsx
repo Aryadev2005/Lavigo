@@ -1,6 +1,7 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
+import { noChrome } from './FooterGate'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { BUSINESS } from '@/lib/config'
@@ -54,7 +55,7 @@ export function Header({ topbar, instagram = BUSINESS.instagram }: { topbar?: st
     return () => window.removeEventListener('scroll', on)
   }, [path])
 
-  if (path.startsWith('/admin') || path.endsWith('/itinerary')) return null
+  if (noChrome(path)) return null
   const clear = ((home && !scrolled) || overScene) && !open // see-through over the home hero until you scroll, and over scenes
   return (
     <>

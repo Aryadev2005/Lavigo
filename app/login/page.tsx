@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { AuthForms } from '@/components/AuthForms'
-import { getCustomer } from '@/lib/customer'
+import { AuthShell } from '@/components/AuthShell'
+import { getCustomer, verifyPhoneUrl } from '@/lib/customer'
 
 export const metadata: Metadata = { title: 'Sign in', robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
@@ -17,27 +17,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const sp = await searchParams
   const raw = sp.next || '/account'
   const next = raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/admin') ? raw : '/account'
-  if (await getCustomer()) redirect(next)
-  const booking = next.startsWith('/trips/')
+  const me = await getCustomer()
+  if (me) redirect(me.phoneVerified ? next : verifyPhoneUrl(next))
   return (
-    <div className="au-page">
-      <div className="au-wrap">
-        <div className="au-side">
-          <p className="lv-eyebrow">Your Lavigo account</p>
-          <h1 className="au-h">{booking ? <>Sign in to <em>book your seats.</em></> : <>Welcome <em>back.</em></>}</h1>
-          <p className="au-sub">One account keeps every booking, itinerary and receipt in one place. Sign in with Google in one tap, or use your email.</p>
-          <ul className="au-points">
-            <li>See all your trips and payments</li>
-            <li>Download itineraries the moment they are ready</li>
-            <li>Review your trip and help other travellers</li>
-          </ul>
-          <AuthForms next={next} initial={sp.mode === 'up' ? 'up' : 'in'} error={sp.e ? ERRORS[sp.e] : undefined} />
-        </div>
-        <div className="au-art" aria-hidden="true">
-          <Image src="/img/sikkim-1.webp" alt="" fill sizes="(max-width:900px) 0px, 45vw" style={{ objectFit: 'cover' }} priority />
-          <span className="au-art-cap">Gurudongmar Lake, North Sikkim</span>
-        </div>
-      </div>
-    </div>
+    <AuthShell>
+      <AuthForms next={next} initial={sp.mode === 'up' ? 'up' : 'in'} error={sp.e ? ERRORS[sp.e] : undefined} />
+    </AuthShell>
   )
 }

@@ -39,6 +39,7 @@ export async function reserveSeats(_prev: ReserveState, fd: FormData): Promise<R
 
   const me = await getCustomer()
   if (!me) return { error: 'Please sign in to book. Your session may have expired.' }
+  if (!me.phoneVerified) return { error: 'Please verify your WhatsApp number before booking.' }
 
   const departureId = String(fd.get('departure_id') || '')
   const phone = cleanPhone(String(fd.get('phone') || ''))
@@ -117,7 +118,7 @@ export async function reserveSeats(_prev: ReserveState, fd: FormData): Promise<R
   }
 
   const code = (data as { code: string }).code
-  if (!me.phone || !me.name) await saveProfile({ id: me.id, email: me.email, ...(me.name ? {} : { name: names[0] }), ...(me.phone ? {} : { phone }) })
+  if (!me.name) await saveProfile({ id: me.id, email: me.email, name: names[0] })
   revalidatePath('/', 'layout') // refresh seat counts everywhere
   redirect(`/booking/${code}`)
 }

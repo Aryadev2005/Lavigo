@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { authClient, authConfigured } from '@/lib/admin-auth'
 import { SITE_URL } from '@/lib/config'
-import { getCustomer, saveProfile } from '@/lib/customer'
+import { getCustomer, saveProfile, verifyPhoneUrl } from '@/lib/customer'
 
 export type AuthState = { error?: string; info?: string }
 
@@ -49,7 +49,7 @@ export async function signInCustomer(_p: AuthState, fd: FormData): Promise<AuthS
   const { data, error } = await sb.auth.signInWithPassword({ email, password })
   if (error || !data.user) return { error: friendly(error) }
   await saveProfile({ id: data.user.id, email })
-  redirect(safeNext(fd.get('next')))
+  redirect(verifyPhoneUrl(safeNext(fd.get('next')))) // passes straight through when already verified
 }
 
 export async function signUpCustomer(_p: AuthState, fd: FormData): Promise<AuthState> {
@@ -71,7 +71,7 @@ export async function signUpCustomer(_p: AuthState, fd: FormData): Promise<AuthS
   if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0 && !data.session) return { error: MSG.user_already_exists }
   if (data.user) await saveProfile({ id: data.user.id, email, name })
   if (!data.session) return { info: `We have sent a confirmation link to ${email}. Open it to finish creating your account, then you can book.` }
-  redirect(next)
+  redirect(verifyPhoneUrl(next))
 }
 
 export async function googleSignIn(fd: FormData) {
@@ -111,11 +111,8 @@ export async function saveMyProfile(_p: AuthState, fd: FormData): Promise<AuthSt
   const c = await getCustomer()
   if (!c) return { error: 'Please sign in again.' }
   const name = String(fd.get('name') || '').trim().replace(/\s+/g, ' ').slice(0, 80)
-  let phone = String(fd.get('phone') || '').replace(/\D/g, '')
-  if (phone.length === 12 && phone.startsWith('91')) phone = phone.slice(2)
   if (name.length < 2) return { error: 'Please enter your full name.' }
-  if (phone && !/^[6-9]\d{9}$/.test(phone)) return { error: 'Please enter a valid 10-digit mobile number.' }
-  await saveProfile({ id: c.id, email: c.email, name, phone })
+  await saveProfile({ id: c.id, email: c.email, name })
   return { info: 'Saved.' }
 }
 

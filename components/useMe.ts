@@ -2,7 +2,7 @@
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-export type Me = { id: string; email: string; name: string; phone: string }
+export type Me = { id: string; email: string; name: string; phone: string; phoneVerified: boolean }
 type State = { loading: boolean; user: Me | null }
 
 // One request per page, shared by every component that asks on that page (header, booking form,
